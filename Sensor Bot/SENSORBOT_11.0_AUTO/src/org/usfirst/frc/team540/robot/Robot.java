@@ -50,23 +50,15 @@ public class Robot extends IterativeRobot {
 
 		// gyroscope
 		gyro = new ADXRS450_Gyro();
+		gyro.reset();
+		gyro.calibrate();
 
 		// encoders
-		//encoder1 = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
 		encoder1 = new Encoder(0,1);
 		encoder1.setMaxPeriod(0.1);
 		encoder1.setMinRate(5);
 		encoder1.setDistancePerPulse(4);
 		encoder1.setSamplesToAverage(10);
-
-		double gyroValue = gyro.getAngle();
-		// Outputs gyro values to the dashboard
-		SmartDashboard.putNumber("Gyro: ", gyroValue);
-
-		// Outputs encoder values to the Smart Dashboard
-		SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
-		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
-		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
 
 	}
 
@@ -78,12 +70,18 @@ public class Robot extends IterativeRobot {
 	public void autonomousPeriodic() {
 		autoSelected = (String) chooser.getSelected();
 		
-
+		double angle = gyro.getAngle();
+		double count = encoder1.getDistance();
+		
+		//Outputs Gyro values
+		SmartDashboard.putNumber("Gyro: ", angle);
+		
 		// Outputs encoder values to the Smart Dashboard
-	/*	SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
+		SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
 		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
 		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
-*/
+		SmartDashboard.putNumber("Distance", count);
+		
 		switch (autoSelected) {
 		case switchAuto:
 			// Put custom auto code here
@@ -192,19 +190,18 @@ public class Robot extends IterativeRobot {
 		// set current positions of joy sticks as values to yLeft and yRight
 		yLeft = leftJoy.getY();
 		yRight = rightJoy.getY();
-
 		
-
-		// Outputs encoder values to the Smart Dashboard
-		/*SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
+		double angle = gyro.getAngle();
+		double count = encoder1.getDistance();
+		
+		//Outputs values to the Smart Dashboard
+		SmartDashboard.putNumber("Gyro: ", angle);
+		
+		SmartDashboard.putNumber("Samples to Average: ", encoder1.getSamplesToAverage());
 		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
 		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
-*/
-		// encoder1.setMaxPeriod(0.1);
-		// encoder1.setMinRate(5);
-		// encoder1.setDistancePerPulse(4);
-		// encoder1.setSamplesToAverage(10);
-
+		SmartDashboard.putNumber("Distance: ", count);
+		
 		// TODO: 0.3 is the dead-zone - fine tune this to the bot
 		if (Math.abs(yLeft) < 0.3) {
 			frontLeft.set(0);
