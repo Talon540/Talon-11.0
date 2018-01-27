@@ -53,6 +53,11 @@ public class Robot extends IterativeRobot {
 		backLeft = new CANSD540(4);
 		backRight = new CANSD540(2);
 
+		frontLeft.setVoltageRamp(200);
+		frontRight.setVoltageRamp(200);
+		backLeft.setVoltageRamp(200);
+		backRight.setVoltageRamp(200);
+		
 		leftJoy = new Joystick(0);
 		rightJoy = new Joystick(1);
 
