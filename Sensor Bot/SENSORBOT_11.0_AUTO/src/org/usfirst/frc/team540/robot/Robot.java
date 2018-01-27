@@ -1,6 +1,9 @@
 package org.usfirst.frc.team540.robot;
 
+import com.mindsensors.CANSD540;
+
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
@@ -16,11 +19,12 @@ public class Robot extends IterativeRobot {
 	final String baselineRight = "Baseline with Right Position";
 	final String switchAuto = "Switch";
 	String autoSelected;
+	String gameData; // Holds 3-character string containing our switch & scale sides
 
 	SendableChooser chooser;
 
-	// motor and joy-stick fields
-	Talon frontLeft, frontRight, backLeft, backRight;
+	// motor and joy-stick fields TODO: Add climber/manipulator motors
+	CANSD540 frontLeft, frontRight, backLeft, backRight;
 	Joystick leftJoy, rightJoy;
 	Encoder encoder1;
 
@@ -40,51 +44,77 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Auto choices", chooser);
 
 		// assigning motors to the created fields
-		frontLeft = new Talon(3);
-		frontRight = new Talon(1);
-		backLeft = new Talon(4);
-		backRight = new Talon(2);
+		frontLeft = new CANSD540(3);
+		frontRight = new CANSD540(1);
+		backLeft = new CANSD540(4);
+		backRight = new CANSD540(2);
 
 		leftJoy = new Joystick(0);
 		rightJoy = new Joystick(1);
 
 		// gyroscope
 		gyro = new ADXRS450_Gyro();
-		gyro.reset();
-		gyro.calibrate();
 
 		// encoders
-		encoder1 = new Encoder(0,1);
+		// encoder1 = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
+		encoder1 = new Encoder(0, 1);
 		encoder1.setMaxPeriod(0.1);
 		encoder1.setMinRate(5);
 		encoder1.setDistancePerPulse(4);
 		encoder1.setSamplesToAverage(10);
 
+		double gyroValue = gyro.getAngle();
+		// Outputs gyro values to the dashboard
+		SmartDashboard.putNumber("Gyro: ", gyroValue);
+
+		// Outputs encoder values to the Smart Dashboard
+		SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
+		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
+		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
+
 	}
 
 	public void autonomousInit() {
 		System.out.println("Auto selected: " + autoSelected);
+
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		/*
+		 * Will be a String containing 3 characters, either 'L' or 'R', which indicate
+		 * which side of the switch or scale is ours in the order: our switch -> scale
+		 * -> their switch
+		 */
+		SmartDashboard.putString("Our switch plate sides: ", gameData);
+
+		// Replaces L with R and R with L to generate the other alliance's gameData
+		String invertedGameData = gameData.replace('L', 'E');
+		invertedGameData = invertedGameData.replace('R', 'L');
+		invertedGameData = invertedGameData.replace('E', 'R');
+		SmartDashboard.putString("Their switch plate sides:", invertedGameData);
 	}
 
 	@Override
 	public void autonomousPeriodic() {
 		autoSelected = (String) chooser.getSelected();
-		
-		double angle = gyro.getAngle();
-		double count = encoder1.getDistance();
-		
-		//Outputs Gyro values
-		SmartDashboard.putNumber("Gyro: ", angle);
-		
+
 		// Outputs encoder values to the Smart Dashboard
-		SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
-		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
-		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
-		SmartDashboard.putNumber("Distance", count);
-		
+		/*
+		 * SmartDashboard.putNumber("Samples to Avergae: ",
+		 * encoder1.getSamplesToAverage());
+		 * SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
+		 * SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
+		 */
 		switch (autoSelected) {
+
 		case switchAuto:
-			// Put custom auto code here
+			// TODO: Movement and cube placement
+
+			if (gameData.charAt(0) == 'L') { // Our switch plate is on our left-hand side
+				// TODO: left side (turn, forward, place cube)
+
+			} else { // Our switch plate is on our right-hand side
+						// TODO: right side (turn, forward, place cube)
+			}
+
 			break;
 
 		case baselineLeft:
@@ -114,13 +144,6 @@ public class Robot extends IterativeRobot {
 			// Gyro determine angle and Encoders determine distance
 
 			// TODO: actually test the encoder values - needs to go 10 ft+
-			// TODO: test the gyro
-
-			// Turns the bot to the left
-			frontRight.set(.5);
-			backRight.set(.5);
-			frontLeft.set(-.5);
-			backLeft.set(-.5);
 
 			// if the bot is a certain angle then move forward
 			if (gyro.getAngle() >= 60 && gyro.getAngle() <= 65) {
@@ -129,7 +152,7 @@ public class Robot extends IterativeRobot {
 				frontLeft.set(1);
 				backLeft.set(1);
 			}
-			// else keep turning
+			// otherwise, turn until at 60 degrees
 			else {
 				frontRight.set(.5);
 				backRight.set(.5);
@@ -190,18 +213,19 @@ public class Robot extends IterativeRobot {
 		// set current positions of joy sticks as values to yLeft and yRight
 		yLeft = leftJoy.getY();
 		yRight = rightJoy.getY();
-		
-		double angle = gyro.getAngle();
-		double count = encoder1.getDistance();
-		
-		//Outputs values to the Smart Dashboard
-		SmartDashboard.putNumber("Gyro: ", angle);
-		
-		SmartDashboard.putNumber("Samples to Average: ", encoder1.getSamplesToAverage());
-		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
-		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
-		SmartDashboard.putNumber("Distance: ", count);
-		
+
+		// Outputs encoder values to the Smart Dashboard
+		/*
+		 * SmartDashboard.putNumber("Samples to Avergae: ",
+		 * encoder1.getSamplesToAverage());
+		 * SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
+		 * SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
+		 */
+		// encoder1.setMaxPeriod(0.1);
+		// encoder1.setMinRate(5);
+		// encoder1.setDistancePerPulse(4);
+		// encoder1.setSamplesToAverage(10);
+
 		// TODO: 0.3 is the dead-zone - fine tune this to the bot
 		if (Math.abs(yLeft) < 0.3) {
 			frontLeft.set(0);
