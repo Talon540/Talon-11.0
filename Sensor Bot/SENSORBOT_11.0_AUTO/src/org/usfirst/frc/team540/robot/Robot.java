@@ -1,7 +1,5 @@
 package org.usfirst.frc.team540.robot;
 
-import com.mindsensors.CANSD540;
-
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
@@ -24,9 +22,9 @@ public class Robot extends IterativeRobot {
 	SendableChooser chooser;
 
 	// motor and joy-stick fields TODO: Add climber/manipulator motors
-	CANSD540 frontLeft, frontRight, backLeft, backRight;
+	Talon frontLeft, frontRight, backLeft, backRight;
 	Joystick leftJoy, rightJoy;
-	Encoder encoder1;
+	//Encoder encoder1;
 
 	// will be used in teleop periodic to get current movement
 	double yLeft, yRight;
@@ -48,16 +46,11 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Auto choices", chooser);
 
 		// assigning motors to the created fields
-		frontLeft = new CANSD540(3);
-		frontRight = new CANSD540(1);
-		backLeft = new CANSD540(4);
-		backRight = new CANSD540(2);
+		frontLeft = new Talon(3);
+		frontRight = new Talon(1);
+		backLeft = new Talon(4);
+		backRight = new Talon(2);
 
-		frontLeft.setVoltageRamp(200);
-		frontRight.setVoltageRamp(200);
-		backLeft.setVoltageRamp(200);
-		backRight.setVoltageRamp(200);
-		
 		leftJoy = new Joystick(0);
 		rightJoy = new Joystick(1);
 
@@ -66,20 +59,20 @@ public class Robot extends IterativeRobot {
 
 		// encoders
 		// encoder1 = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
-		encoder1 = new Encoder(0, 1);
-		encoder1.setMaxPeriod(0.1);
-		encoder1.setMinRate(5);
-		encoder1.setDistancePerPulse(4);
-		encoder1.setSamplesToAverage(10);
+		//encoder1 = new Encoder(0, 1);
+		//encoder1.setMaxPeriod(0.1);
+		//encoder1.setMinRate(5);
+		//encoder1.setDistancePerPulse(4);
+		//encoder1.setSamplesToAverage(10);
 
 		double gyroValue = gyro.getAngle();
 		// Outputs gyro values to the dashboard
 		SmartDashboard.putNumber("Gyro: ", gyroValue);
 
 		// Outputs encoder values to the Smart Dashboard
-		SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
-		SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
-		SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
+		//SmartDashboard.putNumber("Samples to Avergae: ", encoder1.getSamplesToAverage());
+		//SmartDashboard.putNumber("Distance per Pulse: ", encoder1.getDistance());
+		//SmartDashboard.putNumber("Current Rate: ", encoder1.getRate());
 
 	}
 
@@ -146,10 +139,10 @@ public class Robot extends IterativeRobot {
 			}*/
 			
 			if (counter <= 10) {
-				frontRight.set(1);
-				backRight.set(1);
-				frontLeft.set(1);
-				backLeft.set(1);
+				frontRight.set(-.1);
+				backRight.set(-.1);
+				frontLeft.set(.15);
+				backLeft.set(.15);
 			} else {
 				frontRight.set(0);
 				backRight.set(0);
