@@ -51,6 +51,12 @@ public class Robot extends IterativeRobot {
 		backLeft = new Talon(4);
 		backRight = new Talon(2);
 
+		//Uncomment these for CANSD540 motors - 200 will need to be tested
+		//frontLeft.setVoltageRamp(200);
+		//frontRight.setVoltageRamp(200);
+		//backLeft.setVoltageRamp(200);
+		//backRight.setVoltageRamp(200);
+		
 		leftJoy = new Joystick(0);
 		rightJoy = new Joystick(1);
 
