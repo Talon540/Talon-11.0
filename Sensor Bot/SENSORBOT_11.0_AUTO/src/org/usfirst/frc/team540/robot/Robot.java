@@ -30,6 +30,10 @@ public class Robot extends IterativeRobot {
 
 	// will be used in teleop periodic to get current movement
 	double yLeft, yRight;
+
+	// counter for auto, workaround while encoders are fixed
+	int counter;
+
 	double dEncoder;
 	ADXRS450_Gyro gyro;
 
@@ -84,6 +88,8 @@ public class Robot extends IterativeRobot {
 		 * -> their switch
 		 */
 		SmartDashboard.putString("Our switch plate sides: ", gameData);
+		
+		 counter = 0;
 
 		// Replaces L with R and R with L to generate the other alliance's gameData
 		String invertedGameData = gameData.replace('L', 'E');
@@ -121,12 +127,20 @@ public class Robot extends IterativeRobot {
 
 			// Move forward 10ft across baseline
 			// Encoders determine distance
-			frontRight.set(1);
-			backRight.set(1);
-			frontLeft.set(1);
-			backLeft.set(1);
 			// TODO: actually test the encoder values - needs to go 10 ft+
-			if (encoder1.get() <= 10) {
+			/*if (encoder1.get() <= 10) {
+				frontRight.set(1);
+				backRight.set(1);
+				frontLeft.set(1);
+				backLeft.set(1);
+			} else {
+				frontRight.set(0);
+				backRight.set(0);
+				frontLeft.set(0);
+				backLeft.set(0);
+			}*/
+			
+			if (counter <= 10) {
 				frontRight.set(1);
 				backRight.set(1);
 				frontLeft.set(1);
@@ -137,6 +151,8 @@ public class Robot extends IterativeRobot {
 				frontLeft.set(0);
 				backLeft.set(0);
 			}
+			
+			
 			break;
 
 		case baselineMiddle:
@@ -162,7 +178,19 @@ public class Robot extends IterativeRobot {
 
 			// when bot reaches a distance of 10 ft, then stop
 			// TODO: test the encoder
-			if (encoder1.get() <= 10) {
+			/*if (encoder1.get() <= 10) {
+				frontRight.set(1);
+				backRight.set(1);
+				frontLeft.set(1);
+				backLeft.set(1);
+			} else {
+				frontRight.set(0);
+				backRight.set(0);
+				frontLeft.set(0);
+				backLeft.set(0);
+			}*/
+			
+			if (counter <= 10) {
 				frontRight.set(1);
 				backRight.set(1);
 				frontLeft.set(1);
@@ -173,6 +201,7 @@ public class Robot extends IterativeRobot {
 				frontLeft.set(0);
 				backLeft.set(0);
 			}
+			
 
 			break;
 
@@ -185,7 +214,7 @@ public class Robot extends IterativeRobot {
 			frontLeft.set(1);
 			backLeft.set(1);
 			// TODO: actually test the encoder values - needs to go 10 ft+
-			if (encoder1.get() <= 10) {
+			if (counter <= 10) {
 				frontRight.set(1);
 				backRight.set(1);
 				frontLeft.set(1);
