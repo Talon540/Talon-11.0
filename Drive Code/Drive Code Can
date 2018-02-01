@@ -34,20 +34,20 @@ public class Robot extends IterativeRobot {
         SmartDashboard.putData("Auto choices", chooser);
 
         //wheel motors
-        frontLeft = new CANSD540(0);
-        midLeft = new CANSD540(1);
-        backLeft = new CANSD540(2);
-        frontRight = new CANSD540(3);
-        midRight = new CANSD540(4);
-        backRight = new CANSD540(5);
+        frontLeft = new CANSD540(1);
+        midLeft = new CANSD540(2);
+        backLeft = new CANSD540(3);
+        frontRight = new CANSD540(4);
+        midRight = new CANSD540(5);
+        backRight = new CANSD540(6);
 
 
 
         
         //intake motors
-        intake1 = new CANSD540(6);
-        intake2 = new CANSD540(7);
-        intakeVert = new CANSD540(8);
+        intake1 = new CANSD540(7);
+        intake2 = new CANSD540(8);
+        intakeVert = new CANSD540(9);
 
         //joystick and controller motors
         leftJoy = new Joystick(0);
