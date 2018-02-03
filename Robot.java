@@ -1,1 +1,186 @@
+package org.usfirst.frc.team540.robot;
+
+import com.mindsensors.CANSD540;
+
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+public class Robot extends IterativeRobot {
+    final String baselineAuto = "Baseline";
+    final String switchAuto = "Switch";
+    String autoSelected;
+    SendableChooser<String> chooser = new SendableChooser<>();
+
+    //motor, joy-stick, and controller fields
+    CANSD540 frontLeft, frontRight, backLeft, backRight, midLeft, midRight, intake1, intake2, intakeVert;
+    Joystick leftJoy, rightJoy;
+    XboxController xbox;
+    
+    //sensor fields
+    Encoder encoder1;
+
+    //will be used in driveCode() to get current movement
+    double yLeft, yRight;
+
+    @Override
+    public void robotInit() {
+        chooser.addDefault("Baseline", baselineAuto);
+        chooser.addObject("Switch", switchAuto);
+        SmartDashboard.putData("Auto choices", chooser);
+
+        //wheel motors
+        frontLeft = new CANSD540(6);
+        midLeft = new CANSD540(7);
+        backLeft = new CANSD540(8);
+        frontRight = new CANSD540(3);
+        midRight = new CANSD540(4);
+        backRight = new CANSD540(5);
+
+        //intake motors
+        intake1 = new CANSD540(9);
+        intake2 = new CANSD540(10);
+        intakeVert = new CANSD540(11);
+
+        //joystick and controller motors
+        leftJoy = new Joystick(0);
+        rightJoy = new Joystick(1);
+        xbox = new XboxController(0);
+
+        //encoders
+        encoder1 = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
+        encoder1.setMaxPeriod(0.1);
+        encoder1.setMinRate(5);
+        encoder1.setDistancePerPulse(4);
+        encoder1.setSamplesToAverage(10);
+        
+        //initialize voltage ramps      
+        frontLeft.setVoltageRamp(100);
+        midLeft.setVoltageRamp(100);
+        backLeft.setVoltageRamp(100);
+        frontRight.setVoltageRamp(100);
+        midRight.setVoltageRamp(100);
+        backRight.setVoltageRamp(100);
+      
+        intake1.setVoltageRamp(100);
+        intake2.setVoltageRamp(100);
+        intakeVert.setVoltageRamp(100);
+    }
+
+    public void autonomousInit() {
+        System.out.println("Auto selected: " + autoSelected);
+    }
+
+    @Override
+    public void autonomousPeriodic() {
+        switch (autoSelected) {
+        case switchAuto:
+            //Put custom auto code here
+            break;
+        case baselineAuto:
+
+            //Move forward 10ft across baseline
+            //Encoders determine distance
+
+            //TODO: actually test the encoder values - needs to go 10 ft+
+            if (encoder1.get() <= 10) {
+                frontRight.set(1);
+                backRight.set(1);
+                frontLeft.set(1);
+                backLeft.set(1);
+            } else {
+                frontRight.set(0);
+                backRight.set(0);
+                frontLeft.set(0);
+                backLeft.set(0);
+            }
+
+            break;
+        default:
+
+        }
+    }
+
+    @Override
+    public void teleopPeriodic() {
+        //calls driveCode() to drive
+        driveCode();
+        
+        //calls intake() to deal with cube manipulation
+        intake();        
+    }
+    
+    //drive code
+    private void driveCode() {
+		//drive code
+    	
+    	//set current positions of joysticks as values to yLeft and yRight
+        yLeft = -leftJoy.getY();
+        yRight = -rightJoy.getY();
+
+    	// TODO: 0.5 is the dead-zone - fine tune this to the bot
+        if (Math.abs(yLeft) < 0.1) {
+            frontLeft.set(0);
+            midLeft.set(0);
+            backLeft.set(0);
+        } else {
+            frontLeft.set(-yLeft);
+            midLeft.set(-yLeft);
+            backLeft.set(-yLeft);
+        }
+
+        if (Math.abs(yRight) < 0.1) {
+            frontRight.set(0);
+            midRight.set(0);
+            backRight.set(0);
+        } else {
+            frontRight.set(yRight);
+            midRight.set(yRight);
+            backRight.set(yRight);
+        }
+	}
+
+    //intake code
+	public void intake() {
+    	//intake in
+        if(xbox.getRawAxis(2) < 0.7) {
+        	intake1.set(0);
+        	intake2.set(0);
+        }
+        else {
+        	intake1.set(xbox.getRawAxis(2));
+        	intake2.set(xbox.getRawAxis(2));
+        }
+        //intake out
+        if(xbox.getRawAxis(3) < 0.7) {
+        	intake1.set(0);
+        	intake2.set(0);
+        }
+        else {
+        	intake1.set(xbox.getRawAxis(3));
+        	intake2.set(xbox.getRawAxis(3));
+        }
+        
+        //vert go up
+        if(xbox.getXButton() == true) {
+        	intakeVert.set(.5);
+        }
+        else {
+        	intakeVert.set(0);
+        }
+        
+        //vert go down
+        if(xbox.getAButton() == true) {
+        	intake1.set(-0.7);
+        	intake2.set(-0.7);
+        }
+        else {
+        	intake1.set(0);
+        	intake2.set(0);
+        }
+    }
+}
 
