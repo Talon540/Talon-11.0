@@ -4,9 +4,11 @@ import com.mindsensors.CANSD540;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,9 +17,9 @@ public class Robot extends IterativeRobot {
 	final String defaultAuto = "Default";
 	final String baselineSide = "Baseline (S)";
 	final String baselineMiddle = "Baseline (M)";
-	final String switchLeft = "Switch (L)";
+	// final String switchLeft = "Switch (L)";
 	final String switchMiddle = "Switch (M)";
-	final String switchRight = "Switch (R)";
+	// final String switchRight = "Switch (R)";
 
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
@@ -38,14 +40,20 @@ public class Robot extends IterativeRobot {
 	// sensor fields
 	double angle, irDist, pulse, dist;
 
+	// FMS
+	String FMS, enemyFMS;
+
+	// Counter for Auto
+	int counter;
+
 	@Override
 	public void robotInit() {
 		chooser.addDefault("Default (Do Nothing)", defaultAuto);
 		chooser.addObject("Baseline (From Side Position)", baselineSide);
 		chooser.addObject("Baseline (From Middle Position)", baselineMiddle);
-		chooser.addObject("Switch (From Left Position)", switchLeft);
+		// chooser.addObject("Switch (From Left Position)", switchLeft);
 		chooser.addObject("Switch (From Middle Position)", switchMiddle);
-		chooser.addObject("Switch (From Right Position)", switchRight);
+		// chooser.addObject("Switch (From Right Position)", switchRight);
 
 		SmartDashboard.putData("Auto choices", chooser);
 
@@ -87,6 +95,9 @@ public class Robot extends IterativeRobot {
 		gyro.calibrate();
 		enc1.reset();
 
+		// initializes counter
+		counter = 0;
+
 		// initialize voltage ramps
 		frontLeft.setVoltageRamp(100);
 		midLeft.setVoltageRamp(100);
@@ -102,6 +113,11 @@ public class Robot extends IterativeRobot {
 
 	public void autonomousInit() {
 		System.out.println("Auto selected: " + autoSelected);
+
+		// calibrates sensors for auto?? Figure this out later
+		gyro.reset();
+		gyro.calibrate();
+		enc1.reset();
 	}
 
 	@Override
@@ -117,26 +133,123 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
 
+		// FMS
+		FMS = DriverStation.getInstance().getGameSpecificMessage();
+		SmartDashboard.putString("Our Switch Side: ", FMS);
+
+		/*
+		 * ENEMY FMS DETECTION enemyFMS = FMS.replace('L', 'E'); enemyFMS =
+		 * enemyFMS.replace('R', 'L'); enemyFMS = enemyFMS.replace('E', 'R');
+		 * SmartDashboard.putString("Enemy Switch Side: ", enemyFMS);
+		 */
+
 		switch (autoSelected) {
 
 		case baselineSide:
-
+			motorSet(.5, .5);
+			Timer.delay(2);
+			motorSet(0, 0);
 			break;
 
 		case baselineMiddle:
-
-			break;
-
-		case switchLeft:
-
+			if (counter == 0) {
+				motorSet(.1, .1);
+				Timer.delay(.5);
+				counter++;
+			}
+			if (counter == 1) {
+				if (angle >= 45) {
+					motorSet(0, 0);
+					counter++;
+				} else {
+					motorSet((prop(45, angle) * .3), (prop(45, angle)) * -.3);
+				}
+			}
+			if (counter == 2) {
+				motorSet(.5, .5);
+				Timer.delay(4);
+				motorSet(0, 0);
+			}
 			break;
 
 		case switchMiddle:
-
-			break;
-
-		case switchRight:
-
+			if (FMS.charAt(0) == 'L') {
+				if (counter == 0) {
+					motorSet(.1, .1);
+					Timer.delay(.2);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 1) {
+					if (angle <= -20) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet((prop(-20, angle) * -.3), (prop(-20, angle) * .3));
+					}
+				}
+				if (counter == 2) {
+					motorSet(.5, .5);
+					Timer.delay(2);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 3) {
+					if (angle >= 0) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet((prop(0, angle) * .3), (prop(0, angle) * -.3));
+					}
+				}
+				if (counter == 4) {
+					intakeVert.set(.5);
+					Timer.delay(.2);
+					intakeVert.set(0);
+					Timer.delay(.2);
+					intakeMotorSet(-1, -1);
+					Timer.delay(.2);
+					intakeMotorSet(0, 0);
+				}
+			} else {
+				if (counter == 0) {
+					motorSet(.1, .1);
+					Timer.delay(.2);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 1) {
+					if (angle >= 20) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet((prop(20, angle) * .3), (prop(20, angle) * -.3));
+					}
+				}
+				if (counter == 2) {
+					motorSet(.5, .5);
+					Timer.delay(2);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 3) {
+					if (angle <= 0) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet((prop(0, angle) * .3), (prop(0, angle) * -.3));
+					}
+				}
+				if (counter == 4) {
+					intakeVert.set(.5);
+					Timer.delay(.2);
+					intakeVert.set(0);
+					Timer.delay(.2);
+					intakeMotorSet(-1, -1);
+					Timer.delay(.2);
+					intakeMotorSet(0, 0);
+				}
+			}
 			break;
 
 		case defaultAuto:
