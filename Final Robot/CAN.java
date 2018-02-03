@@ -77,7 +77,7 @@ public class Robot extends IterativeRobot {
 		// joystick and controller motors
 		leftJoy = new Joystick(0);
 		rightJoy = new Joystick(1);
-		xbox = new XboxController(0);
+		xbox = new XboxController(2);
 
 		// encoders
 		enc1 = new Encoder(0, 1);
@@ -309,9 +309,9 @@ public class Robot extends IterativeRobot {
 
 	// sets drivetrain motor speed
 	private void motorSet(double x, double y) {
-		frontLeft.set(-x);
-		midLeft.set(-x);
-		backLeft.set(-x);
+		frontLeft.set(x);
+		midLeft.set(x);
+		backLeft.set(x);
 
 		frontRight.set(-y);
 		midRight.set(-y);
