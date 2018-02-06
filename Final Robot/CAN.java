@@ -112,6 +112,7 @@ public class Robot extends IterativeRobot {
 	}
 
 	public void autonomousInit() {
+    		autoSelected = (String) chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 
 		// calibrates sensors for auto?? Figure this out later
