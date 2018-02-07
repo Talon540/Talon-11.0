@@ -26,7 +26,7 @@ public class Robot extends IterativeRobot {
 	final String switchRightEnc = "Switch with encoder(R)";
 	final String baselineSideEnc = "Baseline with encoder(S)";
 	final String switchLeftEnc = "Switch with encoder (L)";
-	final String baselineMiddleEnc = "Switch with encoder (L)";
+	final String baselineMidEnc = "Baseline with encoder (M)";
 
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
@@ -63,7 +63,7 @@ public class Robot extends IterativeRobot {
 		chooser.addObject("Switch with timer (From Right Position)", switchRightTim);
 
 		chooser.addObject("Baseline with encoder (From Side Position)", baselineSideEnc);
-		chooser.addObject("Baseline with encoder (From Middle Position)", baselineMiddleEnc);
+		chooser.addObject("Baseline with encoder (From Middle Position)", baselineMidEnc);
 		chooser.addObject("Switch with encoder (From Left Position)", switchLeftEnc);
 		chooser.addObject("Switch with encoder (From Right Position)", switchRightEnc);
 		chooser.addObject("Switch with encoder (From Middle Position)", switchMiddleEnc);
@@ -357,7 +357,7 @@ public class Robot extends IterativeRobot {
 			motorSet(0, 0);
 			break;
 
-		case baselineMiddleEnc:
+		case baselineMidEnc:
 			if (counter == 0) {
 				motorSet(-.1, -.1); // go forward for .5 secs
 				Timer.delay(.5);
