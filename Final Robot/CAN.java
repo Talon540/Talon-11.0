@@ -15,11 +15,18 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends IterativeRobot {
 	final String defaultAuto = "Default";
-	final String baselineSide = "Baseline (S)";
-	final String baselineMiddle = "Baseline (M)";
-	final String switchLeft = "Switch (L)";
-	final String switchMiddle = "Switch (M)";
-	final String switchRight = "Switch (R)";
+
+	final String baselineSideTim = "Baseline with timer (S)";
+	final String baselineMiddleTim = "Baseline with timer (M)";
+	final String switchLeftTim = "Switch with timer (L)";
+	final String switchRightTim = "Switch with timer (R)";
+	final String switchMiddleTim = "Switch with timer (M)";
+
+	final String switchMiddleEnc = "Switch with encoder (M)";
+	final String switchRightEnc = "Switch with encoder(R)";
+	final String baselineSideEnc = "Baseline with encoder (S)";
+	final String switchLeftEnc = "Switch with encoder (L)";
+	final String baselineMiddleEnc = "Baseline with encoder (M)";
 
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
@@ -49,11 +56,17 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void robotInit() {
 		chooser.addDefault("Default (Do Nothing)", defaultAuto);
-		chooser.addObject("Baseline (From Side Position)", baselineSide);
-		chooser.addObject("Baseline (From Middle Position)", baselineMiddle);
-		chooser.addObject("Switch (From Left Position)", switchLeft);
-		chooser.addObject("Switch (From Middle Position)", switchMiddle);
-		chooser.addObject("Switch (From Right Position)", switchRight);
+		chooser.addObject("Baseline with timer (From Side Position)", baselineSideTim);
+		chooser.addObject("Baseline with timer (From Middle Position)", baselineMiddleTim);
+		chooser.addObject("Switch with timer (From Left Position)", switchLeftTim);
+		chooser.addObject("Switch with timer (From Middle Position)", switchMiddleTim);
+		chooser.addObject("Switch with timer (From Right Position)", switchRightTim);
+
+		chooser.addObject("Baseline with encoder (From Side Position)", baselineSideEnc);
+		chooser.addObject("Baseline with encoder (From Middle Position)", baselineMiddleEnc);
+		chooser.addObject("Switch with encoder (From Left Position)", switchLeftEnc);
+		chooser.addObject("Switch with encoder (From Right Position)", switchRightEnc);
+		chooser.addObject("Switch with encoder (From Middle Position)", switchMiddleEnc);
 
 		SmartDashboard.putData("Auto choices", chooser);
 
@@ -112,7 +125,6 @@ public class Robot extends IterativeRobot {
 	}
 
 	public void autonomousInit() {
-    		autoSelected = (String) chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 
 		// calibrates sensors for auto?? Figure this out later
@@ -146,147 +158,141 @@ public class Robot extends IterativeRobot {
 
 		switch (autoSelected) {
 
-		case baselineSide:
-			motorSet(.5, .5); //go forward to 2 secs
+		case baselineSideTim:
+			motorSet(-.5, -.5); // go forward to 2 secs
 			Timer.delay(2);
 			motorSet(0, 0);
 			break;
 
-		case baselineMiddle:
+		case baselineMiddleTim:
 			if (counter == 0) {
-				motorSet(.1, .1); //go forward for .5 secs
+				motorSet(-.1, -.1); // go forward for .5 secs
 				Timer.delay(.5);
 				counter++;
 			}
 			if (counter == 1) {
-				if (angle >= 45) { //turn right until it reaches 45 
+				if (angle >= 45) { // turn right until it reaches 45
 					motorSet(0, 0);
 					counter++;
 				} else {
-					motorSet((prop(45, angle) * .3), (prop(45, angle)) * -.3);
-					//or else keep turning
+					motorSet((prop(45, angle) * -.3), (prop(45, angle)) * .3);
+					// or else keep turning
 				}
 			}
 			if (counter == 2) {
-				motorSet(.5, .5); //go forward for 4 secs
+				motorSet(-.5, -.5); // go forward for 4 secs
 				Timer.delay(4);
 				motorSet(0, 0);
 			}
+			if (counter >= 3) { // place on switch
+				motorSet(0, 0);
+				intakeMotorSet(0, 0);
+			}
 			break;
 
-		case switchMiddle:
-			if (FMS.charAt(0) == 'L') { //if the switch is left
+		case switchMiddleTim:
+			if (FMS.charAt(0) == 'L') { // if the switch is left
 				if (counter == 0) {
-					motorSet(.1, .1); //go forward for .2 secs
+					motorSet(-.1, -.1); // go forward for .2 secs
 					Timer.delay(.2);
-					motorSet(0, 0); //stops the robot
+					motorSet(0, 0); // stops the robot
 					counter++;
 				}
 				if (counter == 1) {
-					if (angle <= -20) { //turns 20 degrees to the left
+					if (angle <= -20) { // turns 20 degrees to the left
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(-20, angle) * -.3), (prop(-20, angle) * .3)); 
-						//or else keep turning
+						motorSet((prop(-20, angle) * .3), (prop(-20, angle) * -.3));
+						// or else keep turning
 					}
 				}
 				if (counter == 2) {
-					motorSet(.5, .5); //go forward for 2 seconds
+					motorSet(-.5, -.5); // go forward for 2 seconds
 					Timer.delay(2);
-					motorSet(0, 0); //then stop
+					motorSet(0, 0); // then stop
 					counter++;
 				}
 				if (counter == 3) {
-					if (angle >= 0) { //turn to face the switch
+					if (angle >= 0) { // turn to face the switch
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(0, angle) * .3), (prop(0, angle) * -.3)); //or else keep turning
+						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3)); // or else keep turning
 					}
 				}
 				if (counter == 4) {
-					intakeVert.set(.5); //activates the switch elevator for 2 secs
+					intakeVert.set(.5); // activates the switch elevator for 2 secs
 					Timer.delay(.2);
-					intakeVert.set(0); //then stops it
+					intakeVert.set(0); // then stops it
 					Timer.delay(.2);
-					intakeMotorSet(-1, -1); //spits out the cube for 2 secs
+					intakeMotorSet(-1, -1); // spits out the cube for 2 secs
 					Timer.delay(2);
-					intakeMotorSet(0, 0); //then stops
+					intakeMotorSet(0, 0); // then stops
+					counter++;
+				}
+				if (counter >= 5) { // place on switch
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
 				}
 			} else {
-				if (counter == 0) { //if the switch is right
-					motorSet(.1, .1); //go forward for 2 secs
+				if (counter == 0) { // if the switch is right
+					motorSet(-.1, -.1); // go forward for 2 secs
 					Timer.delay(.2);
-					motorSet(0, 0); //then stop
+					motorSet(0, 0); // then stop
 					counter++;
 				}
 				if (counter == 1) {
-					if (angle >= 20) { //turn to the right
+					if (angle >= 20) { // turn to the right
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(20, angle) * .3), (prop(20, angle) * -.3));
-						//else keep turning
+						motorSet((prop(20, angle) * -.3), (prop(20, angle) * .3));
+						// else keep turning
 					}
 				}
 				if (counter == 2) {
-					motorSet(.5, .5); // go forward for 2 secs
+					motorSet(-.5, -.5); // go forward for 2 secs
 					Timer.delay(2);
 					motorSet(0, 0);
 					counter++;
 				}
 				if (counter == 3) {
-					if (angle <= 0) { //turn to face the switch again
+					if (angle <= 0) { // turn to face the switch again
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3));
-						//or else keep turning
+						motorSet((prop(0, angle) * .3), (prop(0, angle) * -.3));
+						// or else keep turning
 					}
 				}
 				if (counter == 4) {
-					intakeVert.set(.5); //activates the switch elevator for 2 secs
+					intakeVert.set(.5); // activates the switch elevator for 2 secs
 					Timer.delay(.2);
-					intakeVert.set(0); //then stops it
+					intakeVert.set(0); // then stops it
 					Timer.delay(.2);
-					intakeMotorSet(-1, -1); //spits the cube for 2 secs
+					intakeMotorSet(-1, -1); // spits the cube for 2 secs
 					Timer.delay(2);
-					intakeMotorSet(0, 0); //then stops
+					intakeMotorSet(0, 0); // then stops
+					counter++;
+				}
+				if (counter >= 5) { // place on switch
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
 				}
 			}
 			break;
 
-		case switchLeft: // TODO: prevent auto collisions
+		case switchLeftTim: // TODO: prevent auto collisions
 			if (FMS.charAt(0) == 'L') {
-				motorSet(.1, .1);
-				Timer.delay(1); // TODO: figure out the actual delay
-				motorSet(0, 0);
-
-			} else { // Switch on right side
 				if (counter == 0) {
-					if (angle >= 45) { // Turn towards switch
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(45, angle) * .3), (prop(45, angle) * -.3));
-					}
-				}
-				if (counter == 1) { // Move across field
-					motorSet(.5, .5);
-					Timer.delay(2);
+					motorSet(-.1, -.1);
+					Timer.delay(1); // TODO: figure out the actual delay
 					motorSet(0, 0);
 					counter++;
 				}
-				if (counter == 2) { // Turn to place on switch
-					if (angle <= 0) {
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3));
-					}
-				}
-				if (counter == 3) { // place on switch
+
+				if (counter == 1) {
 					intakeVert.set(.5);
 					Timer.delay(.2);
 					intakeVert.set(0);
@@ -295,26 +301,18 @@ public class Robot extends IterativeRobot {
 					Timer.delay(.2);
 					intakeMotorSet(0, 0);
 				}
-			}
-			break;
 
-		case switchRight: // TODO: prevent auto collisions
-			if (FMS.charAt(0) == 'R') { // switch on right side
-				motorSet(.1, .1);
-				Timer.delay(1); // TODO: figure out the actual delay
-				motorSet(0, 0);
-
-			} else { // Switch on left side
+			} else { // Switch on right side
 				if (counter == 0) {
-					if (angle >= -45) { // Turn towards switch
+					if (angle >= 45) { // Turn towards switch
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(-45, angle) * -.3), (prop(-45, angle) * .3));
+						motorSet((prop(45, angle) * -.3), (prop(45, angle) * .3));
 					}
 				}
 				if (counter == 1) { // Move across field
-					motorSet(.5, .5);
+					motorSet(-.5, -.5);
 					Timer.delay(2);
 					motorSet(0, 0);
 					counter++;
@@ -335,9 +333,143 @@ public class Robot extends IterativeRobot {
 					intakeMotorSet(-1, -1);
 					Timer.delay(.2);
 					intakeMotorSet(0, 0);
+					counter++;
+				}
+				if (counter >= 4) { // place on switch
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
 				}
 			}
 			break;
+
+		case switchRightTim: // TODO: prevent auto collisions
+			if (counter == 0) {
+				motorSet(-.1, -.1);
+				Timer.delay(1); // TODO: figure out the actual delay
+				motorSet(0, 0);
+				counter++;
+			}
+
+			if (counter == 1) {
+				intakeVert.set(.5);
+				Timer.delay(.2);
+				intakeVert.set(0);
+				Timer.delay(.2);
+				intakeMotorSet(-1, -1);
+				Timer.delay(.2);
+				intakeMotorSet(0, 0);
+
+			} else { // Switch on left side
+				if (counter == 0) {
+					if (angle >= -45) { // Turn towards switch
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet((prop(-45, angle) * .3), (prop(-45, angle) * -.3));
+					}
+				}
+				if (counter == 1) { // Move across field
+					motorSet(-.5, -.5);
+					Timer.delay(2);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 2) { // Turn to place on switch
+					if (angle <= 0) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3));
+					}
+				}
+				if (counter == 3) { // place on switch
+					intakeVert.set(.5);
+					Timer.delay(.2);
+					intakeVert.set(0);
+					Timer.delay(.2);
+					intakeMotorSet(-1, -1);
+					Timer.delay(.2);
+					intakeMotorSet(0, 0);
+					counter++;
+				}
+				if (counter >= 4) { // place on switch
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
+				}
+			}
+			break;
+
+		/**
+		 * case baselineSideEnc: motorSet(-.5, -.5); // go forward to 2 secs if (dist >=
+		 * 10) { motorSet(0, 0); } break;
+		 * 
+		 * case baselineMiddleEnc: if (counter == 0) { motorSet(-.1, -.1); // go forward
+		 * for .5 secs if (dist >= 5) { motorSet(0, 0); } counter++; } if (counter == 1)
+		 * { if (angle >= 45) { // turn right until it reaches 45 motorSet(0, 0);
+		 * counter++; } else { motorSet((prop(45, angle) * -.3), (prop(45, angle)) *
+		 * .3); // or else keep turning } } if (counter == 2) { motorSet(-.5, -.5); //
+		 * go forward for 4 secs if (dist >= 20) { motorSet(0, 0); }
+		 * 
+		 * } break;
+		 * 
+		 * case switchMiddleEnc: if (FMS.charAt(0) == 'L') { // if the switch is left if
+		 * (counter == 0) { motorSet(-.1, -.1); // go forward for .2 secs if (dist >=
+		 * 20) { motorSet(0, 0); } // stops the robot counter++; } if (counter == 1) {
+		 * if (angle <= -20) { // turns 20 degrees to the left motorSet(0, 0);
+		 * counter++; } else { motorSet((prop(-20, angle) * .3), (prop(-20, angle) *
+		 * -.3)); // or else keep turning } } if (counter == 2) { motorSet(-.5, -.5); //
+		 * go forward for 2 seconds if (dist >= 20) { motorSet(0, 0); } // then stop
+		 * counter++; } if (counter == 3) { if (angle >= 0) { // turn to face the switch
+		 * motorSet(0, 0); counter++; } else { motorSet((prop(0, angle) * -.3), (prop(0,
+		 * angle) * .3)); // or else keep turning } } if (counter == 4) {
+		 * intakeVert.set(.5); // activates the switch elevator for 2 secs
+		 * Timer.delay(.2); intakeVert.set(0); // then stops it Timer.delay(.2);
+		 * intakeMotorSet(-1, -1); // spits out the cube for 2 secs Timer.delay(2);
+		 * intakeMotorSet(0, 0); // then stops } } else { if (counter == 0) { // if the
+		 * switch is right motorSet(-.1, -.1); // go forward for 2 secs if (dist >= 20)
+		 * { motorSet(0, 0); } // then stop counter++; } if (counter == 1) { if (angle
+		 * >= 20) { // turn to the right motorSet(0, 0); counter++; } else {
+		 * motorSet((prop(20, angle) * -.3), (prop(20, angle) * .3)); // else keep
+		 * turning } } if (counter == 2) { motorSet(-.5, -.5); // go forward for 2 secs
+		 * if (angle >= 20) { motorSet(0, 0); }
+		 * 
+		 * counter++; } if (counter == 3) { if (angle <= 0) { // turn to face the switch
+		 * again motorSet(0, 0); counter++; } else { motorSet((prop(0, angle) * .3),
+		 * (prop(0, angle) * -.3)); // or else keep turning } } if (counter == 4) {
+		 * intakeVert.set(.5); // activates the switch elevator for 2 secs
+		 * Timer.delay(.2); intakeVert.set(0); // then stops it Timer.delay(.2);
+		 * intakeMotorSet(-1, -1); // spits the cube for 2 secs Timer.delay(2);
+		 * intakeMotorSet(0, 0); // then stops } } break;
+		 * 
+		 * case switchLeftEnc: // TODO: prevent auto collisions if (FMS.charAt(0) ==
+		 * 'L') { motorSet(-.1, -.1); if (dist >= 20) { // TODO: figure out the actual
+		 * delay motorSet(0, 0); }
+		 * 
+		 * } else { // Switch on right side if (counter == 0) { if (angle >= 45) { //
+		 * Turn towards switch motorSet(0, 0); counter++; } else { motorSet((prop(45,
+		 * angle) * -.3), (prop(45, angle) * .3)); } } if (counter == 1) { // Move
+		 * across field motorSet(-.5, -.5); if (dist >= 20) { motorSet(0, 0); }
+		 * counter++; } if (counter == 2) { // Turn to place on switch if (angle <= 0) {
+		 * motorSet(0, 0); counter++; } else { motorSet((prop(0, angle) * .3), (prop(0,
+		 * angle) * -.3)); } } if (counter == 3) { // place on switch
+		 * intakeVert.set(.5); Timer.delay(.2); intakeVert.set(0); Timer.delay(.2);
+		 * intakeMotorSet(-1, -1); Timer.delay(.2); intakeMotorSet(0, 0); } } break;
+		 * 
+		 * case switchRightEnc: // TODO: prevent auto collisions if (FMS.charAt(0) ==
+		 * 'R') { // switch on right side motorSet(-.1, -.1); if (dist >= 20) { // TODO:
+		 * figure out the actual delay motorSet(0, 0); }
+		 * 
+		 * } else { // Switch on left side if (counter == 0) { if (angle >= -45) { //
+		 * Turn towards switch motorSet(0, 0); counter++; } else { motorSet((prop(-45,
+		 * angle) * .3), (prop(-45, angle) * -.3)); } } if (counter == 1) { // Move
+		 * across field motorSet(-.5, -.5); if (dist >= 20) { motorSet(0, 0); }
+		 * counter++; } if (counter == 2) { // Turn to place on switch if (angle <= 0) {
+		 * motorSet(0, 0); counter++; } else { motorSet((prop(0, angle) * -.3), (prop(0,
+		 * angle) * .3)); } } if (counter == 3) { // place on switch intakeVert.set(.5);
+		 * Timer.delay(.2); intakeVert.set(0); Timer.delay(.2); intakeMotorSet(-1, -1);
+		 * Timer.delay(.2); intakeMotorSet(0, 0); } } break;
+		 * 
+		 */
 
 		case defaultAuto:
 			motorSet(0, 0);
@@ -345,7 +477,7 @@ public class Robot extends IterativeRobot {
 		}
 	}
 
-	//PID Functions
+	// PID Functions
 	public static double prop(double target, double x) {
 		return (target - x) / target;
 	}
@@ -395,15 +527,22 @@ public class Robot extends IterativeRobot {
 		motorSet(yLeft, yRight);
 	}
 
-	// sets drivetrain motor speed
-	private void motorSet(double x, double y) {
-		frontLeft.set(x);
-		midLeft.set(x);
-		backLeft.set(x);
+	/**
+	 * Sets motor speed values
+	 * 
+	 * @param left
+	 *            - left motor speed
+	 * @param right
+	 *            - right motor speed
+	 */
+	private void motorSet(double left, double right) {
+		frontLeft.set(left);
+		midLeft.set(left);
+		backLeft.set(left);
 
-		frontRight.set(-y);
-		midRight.set(-y);
-		backRight.set(-y);
+		frontRight.set(-right);
+		midRight.set(-right);
+		backRight.set(-right);
 	}
 
 	// intake code
