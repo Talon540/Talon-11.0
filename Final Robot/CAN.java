@@ -444,11 +444,6 @@ public class Robot extends IterativeRobot {
 		}
 	}
 
-	// PID Functions
-	public static double prop(double target, double x) {
-		return (target - x) / target;
-	}
-
 	@Override
 	public void teleopPeriodic() {
 		// gets sensor values and displays them in SmartDashboard
@@ -475,6 +470,19 @@ public class Robot extends IterativeRobot {
 		climb();
 	}
 
+	public static double prop(double target, double x) {
+		if (x < target / 2.0) {
+			return 1 - ((target - x) / target);
+		} else {
+			// Currently produces a motor speed of 0.06 when multiplied by the usual
+			// motor speed constant of 0.3
+			// TODO: change this if the motor constant changes
+			double prop = (target - x) / target;
+			return (prop < 0.2) ? 0.2 : prop;
+
+		}
+	}
+	
 	// drive code
 	private void drive() {
 		// drive code
