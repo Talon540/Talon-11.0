@@ -18,9 +18,6 @@ public class Robot extends IterativeRobot {
 
 	final String baselineSideTim = "Baseline with timer (S)";
 	final String baselineMiddleTim = "Baseline with timer (M)";
-	final String switchLeftTim = "Switch with timer (L)";
-	final String switchRightTim = "Switch with timer (R)";
-	final String switchMiddleTim = "Switch with timer (M)";
 
 	final String switchMiddleEnc = "Switch with encoder (M)";
 	final String switchRightEnc = "Switch with encoder(R)";
@@ -58,9 +55,6 @@ public class Robot extends IterativeRobot {
 		chooser.addDefault("Default (Do Nothing)", defaultAuto);
 		chooser.addObject("Baseline with timer (From Side Position)", baselineSideTim);
 		chooser.addObject("Baseline with timer (From Middle Position)", baselineMiddleTim);
-		chooser.addObject("Switch with timer (From Left Position)", switchLeftTim);
-		chooser.addObject("Switch with timer (From Middle Position)", switchMiddleTim);
-		chooser.addObject("Switch with timer (From Right Position)", switchRightTim);
 
 		chooser.addObject("Baseline with encoder (From Side Position)", baselineSideEnc);
 		chooser.addObject("Baseline with encoder (From Middle Position)", baselineMiddleEnc);
@@ -93,10 +87,10 @@ public class Robot extends IterativeRobot {
 		xbox = new XboxController(2);
 
 		// encoders
-		enc1 = new Encoder(0, 1);
+		enc1 = new Encoder(0, 1, true);
 		enc1.setMaxPeriod(0.1);
 		enc1.setMinRate(5);
-		enc1.setDistancePerPulse(4);
+		enc1.setDistancePerPulse(0.00078487); //0.00078487 ft per pulse -> 10 ft per 12741 pulses
 		enc1.setSamplesToAverage(10);
 
 		// sensors
@@ -159,15 +153,21 @@ public class Robot extends IterativeRobot {
 		switch (autoSelected) {
 
 		case baselineSideTim:
-			motorSet(-.5, -.5); // go forward to 2 secs
-			Timer.delay(2);
-			motorSet(0, 0);
+			if (counter == 0) {
+				motorSet(-.5, -.5); // go forward to 2 secs
+				Timer.delay(2);
+				counter++;
+			}
+			if (counter == 1) {
+				motorSet(0, 0);
+			}
 			break;
 
 		case baselineMiddleTim:
 			if (counter == 0) {
 				motorSet(-.1, -.1); // go forward for .5 secs
 				Timer.delay(.5);
+				motorSet(0, 0);
 				counter++;
 			}
 			if (counter == 1) {
@@ -175,7 +175,7 @@ public class Robot extends IterativeRobot {
 					motorSet(0, 0);
 					counter++;
 				} else {
-					motorSet((prop(45, angle) * -.3), (prop(45, angle)) * .3);
+					motorSet((prop(45, angle) * .3), (prop(45, angle)) * -.3);
 					// or else keep turning
 				}
 			}
@@ -183,225 +183,29 @@ public class Robot extends IterativeRobot {
 				motorSet(-.5, -.5); // go forward for 4 secs
 				Timer.delay(4);
 				motorSet(0, 0);
+				counter++;
 			}
 			if (counter >= 3) { // place on switch
 				motorSet(0, 0);
-				intakeMotorSet(0, 0);
-			}
-			break;
-
-		case switchMiddleTim:
-			if (FMS.charAt(0) == 'L') { // if the switch is left
-				if (counter == 0) {
-					motorSet(-.1, -.1); // go forward for .2 secs
-					Timer.delay(.2);
-					motorSet(0, 0); // stops the robot
-					counter++;
-				}
-				if (counter == 1) {
-					if (angle <= -20) { // turns 20 degrees to the left
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(-20, angle) * .3), (prop(-20, angle) * -.3));
-						// or else keep turning
-					}
-				}
-				if (counter == 2) {
-					motorSet(-.5, -.5); // go forward for 2 seconds
-					Timer.delay(2);
-					motorSet(0, 0); // then stop
-					counter++;
-				}
-				if (counter == 3) {
-					if (angle >= 0) { // turn to face the switch
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3)); // or else keep turning
-					}
-				}
-				if (counter == 4) {
-					intakeVert.set(.5); // activates the switch elevator for 2 secs
-					Timer.delay(.2);
-					intakeVert.set(0); // then stops it
-					Timer.delay(.2);
-					intakeMotorSet(-1, -1); // spits out the cube for 2 secs
-					Timer.delay(2);
-					intakeMotorSet(0, 0); // then stops
-					counter++;
-				}
-				if (counter >= 5) { // place on switch
-					motorSet(0, 0);
-					intakeMotorSet(0, 0);
-				}
-			} else {
-				if (counter == 0) { // if the switch is right
-					motorSet(-.1, -.1); // go forward for 2 secs
-					Timer.delay(.2);
-					motorSet(0, 0); // then stop
-					counter++;
-				}
-				if (counter == 1) {
-					if (angle >= 20) { // turn to the right
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(20, angle) * -.3), (prop(20, angle) * .3));
-						// else keep turning
-					}
-				}
-				if (counter == 2) {
-					motorSet(-.5, -.5); // go forward for 2 secs
-					Timer.delay(2);
-					motorSet(0, 0);
-					counter++;
-				}
-				if (counter == 3) {
-					if (angle <= 0) { // turn to face the switch again
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(0, angle) * .3), (prop(0, angle) * -.3));
-						// or else keep turning
-					}
-				}
-				if (counter == 4) {
-					intakeVert.set(.5); // activates the switch elevator for 2 secs
-					Timer.delay(.2);
-					intakeVert.set(0); // then stops it
-					Timer.delay(.2);
-					intakeMotorSet(-1, -1); // spits the cube for 2 secs
-					Timer.delay(2);
-					intakeMotorSet(0, 0); // then stops
-					counter++;
-				}
-				if (counter >= 5) { // place on switch
-					motorSet(0, 0);
-					intakeMotorSet(0, 0);
-				}
-			}
-			break;
-
-		case switchLeftTim: // TODO: prevent auto collisions
-			if (FMS.charAt(0) == 'L') {
-				if (counter == 0) {
-					motorSet(-.1, -.1);
-					Timer.delay(1); // TODO: figure out the actual delay
-					motorSet(0, 0);
-					counter++;
-				}
-
-				if (counter == 1) {
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0);
-					Timer.delay(.2);
-					intakeMotorSet(-1, -1);
-					Timer.delay(.2);
-					intakeMotorSet(0, 0);
-				}
-
-			} else { // Switch on right side
-				if (counter == 0) {
-					if (angle >= 45) { // Turn towards switch
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(45, angle) * -.3), (prop(45, angle) * .3));
-					}
-				}
-				if (counter == 1) { // Move across field
-					motorSet(-.5, -.5);
-					Timer.delay(2);
-					motorSet(0, 0);
-					counter++;
-				}
-				if (counter == 2) { // Turn to place on switch
-					if (angle <= 0) {
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(0, angle) * .3), (prop(0, angle) * -.3));
-					}
-				}
-				if (counter == 3) { // place on switch
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0);
-					Timer.delay(.2);
-					intakeMotorSet(-1, -1);
-					Timer.delay(.2);
-					intakeMotorSet(0, 0);
-					counter++;
-				}
-				if (counter >= 4) { // place on switch
-					motorSet(0, 0);
-					intakeMotorSet(0, 0);
-				}
-			}
-			break;
-
-		case switchRightTim: // TODO: prevent auto collisions
-			if (counter == 0) {
-				motorSet(-.1, -.1);
-				Timer.delay(1); // TODO: figure out the actual delay
-				motorSet(0, 0);
+				intakeMotorSet(-.5, -.5);
+				Timer.delay(1);
 				counter++;
 			}
-
-			if (counter == 1) {
-				intakeVert.set(.5);
-				Timer.delay(.2);
-				intakeVert.set(0);
-				Timer.delay(.2);
-				intakeMotorSet(-1, -1);
-				Timer.delay(.2);
+			if (counter == 4) {
 				intakeMotorSet(0, 0);
-
-			} else { // Switch on left side
-				if (counter == 0) {
-					if (angle >= -45) { // Turn towards switch
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(-45, angle) * .3), (prop(-45, angle) * -.3));
-					}
-				}
-				if (counter == 1) { // Move across field
-					motorSet(-.5, -.5);
-					Timer.delay(2);
-					motorSet(0, 0);
-					counter++;
-				}
-				if (counter == 2) { // Turn to place on switch
-					if (angle <= 0) {
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3));
-					}
-				}
-				if (counter == 3) { // place on switch
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0);
-					Timer.delay(.2);
-					intakeMotorSet(-1, -1);
-					Timer.delay(.2);
-					intakeMotorSet(0, 0);
-					counter++;
-				}
-				if (counter >= 4) { // place on switch
-					motorSet(0, 0);
-					intakeMotorSet(0, 0);
-				}
 			}
 			break;
 
 		case baselineSideEnc:
-			motorSet(-.5, -.5); // go forward to 2 secs
-			if (dist >= 10) {
+			if (counter == 0) {
+				if (dist >= 10) {
+					motorSet(0, 0);
+					counter++;
+				} else {
+					motorSet(prop(12741, pulse) * -.6, prop(12741, pulse) * -.6);
+				}
+			}
+			if (counter == 1) {
 				motorSet(0, 0);
 			}
 			break;
