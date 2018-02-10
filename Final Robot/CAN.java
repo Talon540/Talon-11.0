@@ -1,5 +1,12 @@
 package org.usfirst.frc.team540.robot;
 
+//ToDo
+// Fix Turning for Middle Auto
+// Test Side Auto
+// Test Elevator
+// Test Hook
+// Test Winch
+
 import com.mindsensors.CANSD540;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
@@ -83,10 +90,11 @@ public class Robot extends IterativeRobot {
 		xbox = new XboxController(2);
 
 		// encoders
-		enc1 = new Encoder(0, 1, true);
+		enc1 = new Encoder(0, 1, false);
 		enc1.setMaxPeriod(0.1);
 		enc1.setMinRate(5);
-		enc1.setDistancePerPulse(0.00078487); // 0.00078487 ft per pulse -> 10 ft per 12741 pulses
+		enc1.setDistancePerPulse(0.00078487); // 0.00078487 ft per pulse -> 10
+												// ft per 12741 pulses
 		enc1.setSamplesToAverage(10);
 
 		// sensors
@@ -130,7 +138,7 @@ public class Robot extends IterativeRobot {
 		angle = gyro.getAngle();
 		irDist = IR.getVoltage();
 		pulse = enc1.get();
-		dist = enc1.getDistance();
+		dist = Math.abs(enc1.getDistance());
 
 		SmartDashboard.putNumber("Angle: ", angle);
 		SmartDashboard.putNumber("IR Distance: ", irDist);
@@ -162,11 +170,11 @@ public class Robot extends IterativeRobot {
 
 		case baselineEnc:
 			if (counter == 0) {
-				if (dist >= 11) { // 11 feet
+				if (dist >= 9.5) { // 9.5 feet
 					motorSet(0, 0);
 					counter++;
 				} else {
-					motorSet(prop(11, dist) * -.6, prop(11, dist) * -.6);
+					motorSet(prop(9.5, dist) * -1, prop(9.5, dist) * -1);
 				}
 			}
 			if (counter == 1) {
@@ -175,13 +183,15 @@ public class Robot extends IterativeRobot {
 			break;
 
 		case switchMiddleEnc:
+			System.out.println(FMS.charAt(0));
 			if (FMS.charAt(0) == 'L') { // if the switch is left
+
 				if (counter == 0) {
-					if (dist >= 0.5) {
+					if (dist >= 2) {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(0.5, dist) * -.3), (prop(0.5, dist) * -.3));
+						motorSet((prop(2, dist) * -.3), (prop(2, dist) * -.3));
 					}
 				}
 				if (counter == 1) {
@@ -189,7 +199,10 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(-20, angle) * .3), (prop(-20, angle) * -.3)); // or else keep turning
+						motorSet((prop(-20, angle) * .3), (prop(-20, angle) * -.3)); // or
+																						// else
+																						// keep
+																						// turning
 					}
 				}
 				if (counter == 2) {
@@ -205,11 +218,15 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3)); // or else keep turning
+						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3)); // or
+																					// else
+																					// keep
+																					// turning
 					}
 				}
 				// if (counter == 4) {
-				// intakeVert.set(.5); // activates the switch elevator for 2 secs
+				// intakeVert.set(.5); // activates the switch elevator for 2
+				// secs
 				// Timer.delay(.2);
 				// intakeVert.set(0); // then stops it
 				// Timer.delay(.2);
@@ -219,11 +236,11 @@ public class Robot extends IterativeRobot {
 				// }
 			} else { // right hand switch
 				if (counter == 0) {
-					if (dist >= 0.5) { // move away from the wall so it can turn
+					if (dist >= 2) { // move away from the wall so it can turn
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(0.5, dist) * -.3), (prop(0.5, dist) * -.3));
+						motorSet(-.5, -.5);
 					}
 				}
 				if (counter == 1) {
@@ -231,7 +248,10 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(20, angle) * .3), (prop(20, angle) * -.3)); // or else keep turning
+						motorSet((propGyro(20, angle) * -.2), (propGyro(20, angle) * .2)); // or
+						// else
+						// keep
+						// turning
 					}
 				}
 				if (counter == 2) {
@@ -239,6 +259,7 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else {
+						System.out.println("kek");
 						motorSet((prop(12.1666666666667, dist) * -.3), (prop(12.1666666666667, dist) * -.3));
 					}
 				}
@@ -247,11 +268,15 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet((prop(0, angle) * -.3), (prop(0, angle) * .3)); // or else keep turning
+						motorSet((propGyro(0, angle) * .3), (propGyro(0, angle) * -.3)); // or
+						// else
+						// keep
+						// turning
 					}
 				}
 				// if (counter == 4) {
-				// intakeVert.set(.5); // activates the switch elevator for 2 secs
+				// intakeVert.set(.5); // activates the switch elevator for 2
+				// secs
 				// Timer.delay(.2);
 				// intakeVert.set(0); // then stops it
 				// Timer.delay(.2);
@@ -446,20 +471,33 @@ public class Robot extends IterativeRobot {
 	}
 
 	// PID Functions
-	public static double prop(double target, double x) {
-		if (x < target / 2.0) {
-			return 1 - ((target - x) / target);
-		} else if (x >= target) {
+	public static double prop(double target, double currentEnc) {
+		if (currentEnc < target / 2.0) {
+			return 1 - ((target - currentEnc) / target) + 0.2;
+		} else if (currentEnc >= target) {
 			return 0;
-		} else {
-
-			// Currently produces a motor speed of 0.06 when multiplied by the standard
+		} else if ((target - currentEnc) / target < 0.3) {
+			// Currently produces a motor speed of 0.06 when multiplied by the
+			// standard
 			// motor constant of 0.3
 			// TODO: change this if the motor constant changes
-			double prop = (target - x) / target;
-			return (prop < 0.2) ? 0.2 : prop;
+			return 0.2;
+		} else if ((target - currentEnc) / target < 0.1) {
+			return 0.1;
+		} else {
+			return (target - currentEnc) / target + 0.05;
 		}
 	}
+
+	public static double propGyro(double target, double currentGyro) {
+		return (target - currentGyro) / currentGyro;
+	}
+	/*
+	 * public static double prop(double target, double currentPos) { double
+	 * relPos = (target - currentPos) / target; if (relPos < .2) { return
+	 * (double).3; } else if (relPos > .8) { return (double) .3; } return
+	 * (double) .7; }
+	 */
 
 	@Override
 	public void teleopPeriodic() {
@@ -492,12 +530,12 @@ public class Robot extends IterativeRobot {
 		// drive code
 
 		// set current positions of joysticks as values to yLeft and yRight
-		if (Math.abs(leftJoy.getY()) > 0.1) {
+		if (Math.abs(leftJoy.getY()) > 0.2) {
 			yLeft = leftJoy.getY();
 		} else {
 			yLeft = 0;
 		}
-		if (Math.abs(rightJoy.getY()) > 0.1) {
+		if (Math.abs(rightJoy.getY()) > 0.2) {
 			yRight = rightJoy.getY();
 		} else {
 			yRight = 0;
