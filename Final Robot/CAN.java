@@ -559,6 +559,8 @@ public class Robot extends IterativeRobot {
 	}
 
 	// sets hook & winch motor speed
+	//5 is Y axis on right joystick
+	//3 is right trigger
 	private void climb() {
 		if (xbox.getRawAxis(5) > 0.7) {
 			hooker = xbox.getRawAxis(5);
