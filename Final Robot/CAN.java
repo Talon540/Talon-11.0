@@ -102,16 +102,16 @@ public class Robot extends IterativeRobot {
 		counter = 0;
 
 		// initialize voltage ramps
-		frontLeft.setVoltageRamp(150);
-		midLeft.setVoltageRamp(150);
-		backLeft.setVoltageRamp(150);
-		frontRight.setVoltageRamp(150);
-		midRight.setVoltageRamp(150);
-		backRight.setVoltageRamp(150);
+		frontLeft.setVoltageRamp(100);
+		midLeft.setVoltageRamp(100);
+		backLeft.setVoltageRamp(100);
+		frontRight.setVoltageRamp(100);
+		midRight.setVoltageRamp(100);
+		backRight.setVoltageRamp(100);
 
-		intake1.setVoltageRamp(150);
-		intake2.setVoltageRamp(150);
-		intakeVert.setVoltageRamp(150);
+		intake1.setVoltageRamp(100);
+		intake2.setVoltageRamp(100);
+		intakeVert.setVoltageRamp(100);
 	}
 
 	public void autonomousInit() {
