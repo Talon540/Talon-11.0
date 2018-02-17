@@ -7,8 +7,8 @@ package org.usfirst.frc.team540.robot;
 // Test Hook
 // Test Winch
 
-import com.mindsensors.CANSD540;a
-a
+import com.mindsensors.CANSD540;
+
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
