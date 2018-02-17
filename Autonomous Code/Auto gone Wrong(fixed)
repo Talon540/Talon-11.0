@@ -97,8 +97,7 @@ public class Robot extends IterativeRobot {
 		enc1 = new Encoder(0, 1, false);
 		enc1.setMaxPeriod(0.1);
 		enc1.setMinRate(5);
-		enc1.setDistancePerPulse(0.00078487); // 0.00078487 ft per pulse -> 10
-												// ft per 12741 pulses
+		enc1.setDistancePerPulse(0.00078487); // 0.00078487 ft per pulse -> 10 ft per 12741 pulses
 		enc1.setSamplesToAverage(10);
 
 		// sensors
@@ -130,7 +129,16 @@ public class Robot extends IterativeRobot {
 		autoSelected = chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 
-		// calibrates sensors for auto?? Figure this out later
+		// FMS
+		FMS = DriverStation.getInstance().getGameSpecificMessage();
+		SmartDashboard.putString("Our Switch Side: ", FMS);
+		
+		/*
+		 * ENEMY FMS DETECTION enemyFMS = FMS.replace('L', 'E'); enemyFMS =
+		 * enemyFMS.replace('R', 'L'); enemyFMS = enemyFMS.replace('E', 'R');
+		 * SmartDashboard.putString("Enemy Switch Side: ", enemyFMS);
+		 */
+		
 		gyro.reset();
 		gyro.calibrate();
 		enc1.reset();
@@ -149,23 +157,13 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
 
-		// FMS
-		FMS = DriverStation.getInstance().getGameSpecificMessage();
-		SmartDashboard.putString("Our Switch Side: ", FMS);
-
-		/*
-		 * ENEMY FMS DETECTION enemyFMS = FMS.replace('L', 'E'); enemyFMS =
-		 * enemyFMS.replace('R', 'L'); enemyFMS = enemyFMS.replace('E', 'R');
-		 * SmartDashboard.putString("Enemy Switch Side: ", enemyFMS);
-		 */
-
 		switch (autoSelected) {
 
-		// MOTORS ARE BOTH INVERTED IN AUTO
-		case baselineTim:
+		// MOTORS ARE BOTH INVERTED IN AUTO (no reason found, but it works)
+		case baselineTim: // used in case encoders do not work; not accurate at the moment
 			if (counter == 0) {
 				motorSet(-.5, -.5); // go forward to 2 secs
-				Timer.delay(2);
+				Timer.delay(2); //TODO: fine tune the time
 				counter++;
 			}
 			if (counter == 1) {
@@ -189,7 +187,7 @@ public class Robot extends IterativeRobot {
 
 		case baselineMidTim:
 			if (counter == 0) {
-				raiseIntake_Auto(); // Raise the intake
+				// raiseIntake_Auto(); // Raise the intake
 				motorSet(-.5, -.5); // go forward to 2 secs
 				Timer.delay(2);
 				counter++;
@@ -201,7 +199,7 @@ public class Robot extends IterativeRobot {
 
 		case baselineMidEnc:
 			if (counter == 0) {
-				raiseIntake_Auto(); // Raise the intake
+				// raiseIntake_Auto(); // Raise the intake
 				if (dist >= 9.5) { // 9.5 feet
 					motorSet(0, 0);
 					counter++;
@@ -229,9 +227,8 @@ public class Robot extends IterativeRobot {
 					if (angle >= -20) { // turns 20 degrees to the left
 						motorSet(0, 0);
 						counter++;
-					} else {
-						motorSet((propGyro(-20, angle) * .2), (propGyro(-20, angle) * -.2)); // or
-						// else keep turning
+					} else { // TODO: fine-tune the turning function
+						motorSet((propGyro(-20, angle) * .2), (propGyro(-20, angle) * -.2)); // or else keep turning
 					}
 				}
 				if (counter == 2) {
@@ -246,7 +243,7 @@ public class Robot extends IterativeRobot {
 					if (angle <= 0) { // turn to face the switch
 						motorSet(0, 0);
 						counter++;
-					} else {
+					} else { // TODO: fine-tune the turning function
 						motorSet((propGyro(0, angle) * .3), (propGyro(0, angle) * -.3)); // or
 						// else keep turning
 					}
@@ -312,7 +309,7 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 
-		case switchLeftEnc:
+		case switchLeftEnc: // TODO: fine-tune the turning function
 			if (FMS.charAt(0) == 'L') {
 				if (counter == 0) {
 					if (dist >= 14) { // move forward 168 in
@@ -343,6 +340,7 @@ public class Robot extends IterativeRobot {
 				// TODO: intake
 
 			} else { // Switch on right side
+			// TODO: be careful of turning error accumulation
 				if (counter == 0) { // move 235 in. past the switch
 					if (dist >= 19.58333333333333333) {
 						motorSet(0, 0);
@@ -431,6 +429,7 @@ public class Robot extends IterativeRobot {
 				}
 
 			} else { // Switch on left side
+			// TODO: review for turning error accumulation
 				if (counter == 0) { // move past switch
 					if (dist >= 19.58333333333333333) {
 						motorSet(0, 0);
@@ -532,26 +531,26 @@ public class Robot extends IterativeRobot {
 	 * @return the proportion of the motor speed constant to set
 	 */
 	public static double prop(double target, double currentEnc) {
-		if (currentEnc < target / 2.0) {
+		if (currentEnc < target / 2.0) { // speeding up
 			return 1 - ((target - currentEnc) / target) + 0.2;
-		} else if (currentEnc >= target) {
+		} else if (currentEnc >= target) { // stops the motors
 			return 0;
-		} else if ((target - currentEnc) / target < 0.3) {
+		} else if ((target - currentEnc) / target < 0.3) { // levels off at a constant speed
 			// Currently produces a motor speed of 0.06 when multiplied by the
 			// standard
 			// motor constant of 0.3
 			// TODO: change this if the motor constant changes
 			return 0.2;
-		} else if ((target - currentEnc) / target < 0.1) {
+		} else if ((target - currentEnc) / target < 0.1) { // levels off at a lower speed for deceleration
 			return 0.1;
-		} else {
+		} else { // descending slope; decelerating
 			return (target - currentEnc) / target + 0.05;
 		}
 	}
 
 	/**
-	 * Gets the proportion to be used with motor speed during gyro turns. Used in
-	 * auto.
+	 * Gets the proportion to be used with motor speed during gyro turns.
+	 * Used in auto.
 	 * 
 	 * @param target
 	 *            the target value
@@ -560,7 +559,7 @@ public class Robot extends IterativeRobot {
 	 * @return the proportion of the motor speed constant to set
 	 */
 	public static double propGyro(double target, double currentGyro) {
-		return (target - currentGyro) / currentGyro;
+		return (target - currentGyro) / target;
 	}
 
 	/*
