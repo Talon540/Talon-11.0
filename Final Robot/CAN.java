@@ -564,9 +564,9 @@ public class Robot extends IterativeRobot {
 
 	// intake code
 	private void intake() {
-		if (xbox.getRawAxis(1) > 0.7) {
-			intakeL = xbox.getRawAxis(1);
-			intakeR = xbox.getRawAxis(1);
+		if (xbox.getRawAxis(2) > 0.7) {
+			intakeL = -xbox.getRawAxis(2);
+			intakeR = -xbox.getRawAxis(2);
 		} else {
 			intakeL = 0;
 			intakeR = 0;
