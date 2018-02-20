@@ -617,6 +617,13 @@ public class Robot extends IterativeRobot {
 			intakeL = 0;
 			intakeR = 0;
 		}
+		if (xbox.getRawAxis(1) < -0.7) {
+			intakeL = xbox.getRawAxis(1);
+			intakeR = xbox.getRawAxis(1);
+		} else {
+			intakeL = 0;
+			intakeR = 0;
+		}
 
 		intakeMotorSet(intakeL, intakeR);
 	}
@@ -628,16 +635,16 @@ public class Robot extends IterativeRobot {
 	 */
 	private void moveIntake_Teleop() {
 		// Goes up
-		if (xbox.getXButton() == true) {
-			intakeVert.set(.5);
+		if (xbox.getRawAxis(3) > 0.7) {
+			intakeVert.set(-xbox.getRawAxis(3));
 		} else {
 			intakeVert.set(0);
 		}
 
 		// Goes down
-		if (xbox.getAButton() == true) {
-			intake1.set(-0.5);
-			intake2.set(-0.5);
+		if (xbox.getRawAxis(3) < -0.7) {
+			intake1.set(xbox.getRawAxis(3));
+			intake2.set(xbox.getRawAxis(3));
 		} else {
 			intake1.set(0);
 			intake2.set(0);
@@ -675,13 +682,13 @@ public class Robot extends IterativeRobot {
 	 */
 	// TODO:
 	private void climb() {
-		if (xbox.getRawAxis(5) > 0.7) {
-			hooker = xbox.getRawAxis(5);
+		if (xbox.getAButton() == true) {
+			hooker = 1;
 		} else {
 			hooker = 0;
 		}
-		if (xbox.getRawAxis(3) > 0.7) {
-			wench = xbox.getRawAxis(3);
+		if (xbox.getBButton() == true) {
+			wench = 1;
 		} else {
 			wench = 0;
 		}
