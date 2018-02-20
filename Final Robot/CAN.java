@@ -610,18 +610,25 @@ public class Robot extends IterativeRobot {
 	 * Activates or deactivates the intake based on the left stick y-axis input.
 	 */
 	private void intake() {
-		if (xbox.getRawAxis(1) > 0.7) {
-			intakeL = xbox.getRawAxis(1);
-			intakeR = xbox.getRawAxis(1);
+		if (xbox.getRawAxis(2) > 0.7) {
+			intakeL = xbox.getRawAxis(2);
 		} else {
 			intakeL = 0;
+		}
+		if (xbox.getRawAxis(2) < -0.7) {
+			intakeL = xbox.getRawAxis(2);
+		} else {
+			intakeL = 0;
+		}
+		
+		if (xbox.getRawAxis(5) > 0.7) {
+			intakeR = xbox.getRawAxis(5);
+		} else {
 			intakeR = 0;
 		}
-		if (xbox.getRawAxis(1) < -0.7) {
-			intakeL = xbox.getRawAxis(1);
-			intakeR = xbox.getRawAxis(1);
+		if (xbox.getRawAxis(5) < -0.7) {
+			intakeR = xbox.getRawAxis(5);
 		} else {
-			intakeL = 0;
 			intakeR = 0;
 		}
 
@@ -687,6 +694,12 @@ public class Robot extends IterativeRobot {
 		} else {
 			hooker = 0;
 		}
+		if (xbox.getXButton() == true) {
+			hooker = -1;
+		} else {
+			hooker = 0;
+		}
+		
 		if (xbox.getBButton() == true) {
 			wench = 1;
 		} else {
