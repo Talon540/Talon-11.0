@@ -11,6 +11,7 @@ import com.mindsensors.CANSD540;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
@@ -58,12 +59,8 @@ public class Robot extends IterativeRobot {
 
 	@Override
 	public void robotInit() {
-		chooser.addDefault("Default (Do Nothing)", defaultAuto); // default is
-																	// currently
-																	// set to
-																	// turn 20
-																	// degrees
-																	// as a test
+		// Default currently turns
+		chooser.addDefault("Default (Do Nothing)", defaultAuto);
 		chooser.addObject("Baseline with timer (From Side Position)", baselineTim);
 		chooser.addObject("Baseline with encoder (From Side Position)", baselineEnc);
 		chooser.addObject("Switch with encoder (From Left Position)", switchLeftEnc);
@@ -125,6 +122,10 @@ public class Robot extends IterativeRobot {
 		intake1.setVoltageRamp(100);
 		intake2.setVoltageRamp(100);
 		intakeVert.setVoltageRamp(100);
+		
+		//Camera Server
+		CameraServer.getInstance().addAxisCamera("10.5.40.50");
+		CameraServer.getInstance().startAutomaticCapture();
 
 		// pdp for debugging purposes
 		// pdp = new PowerDistributionPanel();
@@ -478,15 +479,15 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 
-		case defaultAuto: 
-			//Turns 45 degrees
+		case defaultAuto:
+			// Turns 45 degrees
 			if (counter == 0) {
 				if (angle <= -20) {
 					motorSet(0, 0);
 					counter++;
 					System.out.println("test");
 				} else { // turns right
-					//TODO: TEST IN LIBRARY
+					// TODO: TEST IN LIBRARY
 					motorSet((propGyro(-20, angle) * .5), (propGyro(-20, angle)) * -.5);
 				}
 			}
