@@ -1,9 +1,8 @@
 package org.usfirst.frc.team540.robot;
 
 // TODO:
-// Fix Turning for Middle Auto
-// Test Side Auto
-// Test Elevator
+// Test Middle Auto
+// Replace turning function in auto...
 // Test Hook
 // Test Winch
 
@@ -32,9 +31,6 @@ public class Robot extends IterativeRobot {
 	final String switchRightEnc = "Switch with encoder(R)";
 	final String switchLeftEnc = "Switch with encoder (L)";
 
-	final String fallbackLeft = "Fallback switch / baseline (L)";
-	final String fallbackRight = "Fallback switch / baseline (R)";
-
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
 
@@ -53,6 +49,8 @@ public class Robot extends IterativeRobot {
 
 	// sensor fields
 	double angle, irDist, pulse, dist;
+	
+	final double TURN_CONSTANT = 0.5, DRIVE_CONSTANT = 0.3;
 
 	// FMS
 	String FMS, enemyFMS;
@@ -125,8 +123,8 @@ public class Robot extends IterativeRobot {
 		intake1.setVoltageRamp(100);
 		intake2.setVoltageRamp(100);
 		intakeVert.setVoltageRamp(100);
-
-		// Camera Server
+		
+		//Camera Server
 		CameraServer.getInstance().addAxisCamera("10.5.40.50");
 		CameraServer.getInstance().startAutomaticCapture();
 
@@ -139,19 +137,7 @@ public class Robot extends IterativeRobot {
 		System.out.println("Auto selected: " + autoSelected);
 
 		// FMS
-		FMS = "";
-		int retries = 100;
-		while (FMS.length() < 2 && retries > 0) {
-			try {
-				Thread.sleep(5);
-				FMS = DriverStation.getInstance().getGameSpecificMessage();
-				if (FMS == null) {
-					FMS = "";
-				}
-			} catch (Exception e) {
-			}
-			retries--;
-		}
+		FMS = DriverStation.getInstance().getGameSpecificMessage();
 		SmartDashboard.putString("Our Switch Side: ", FMS);
 
 		/*
@@ -225,10 +211,7 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else { // TODO: fine-tune the turning function
-						motorSet((propGyro(-20, angle) * .2), (propGyro(-20, angle) * -.2)); // or
-																								// else
-																								// keep
-																								// turning
+						motorSet((propGyro(-20, angle) * TURN_CONSTANT), (propGyro(-20, angle) * -TURN_CONSTANT));
 					}
 				}
 				if (counter == 2) {
@@ -245,7 +228,7 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else { // TODO: fine-tune the turning function
-						motorSet((propGyro(0, angle) * .3), (propGyro(0, angle) * -.3)); // or
+						motorSet((propGyro(20, angle) * -TURN_CONSTANT), (propGyro(20, angle) * TURN_CONSTANT)); // or
 						// else keep turning
 					}
 				}
@@ -266,18 +249,16 @@ public class Robot extends IterativeRobot {
 						gyro.reset();
 						counter++;
 					} else {
-						motorSet(-.5, -.5);
+						motorSet(-.3, -.3);
 					}
 				}
 				if (counter == 1) {
-					if (angle >= 20) { // turns 20 degrees to the right
+					if (angle >= 30) { // turns 20 degrees to the right
 						motorSet(0, 0);
+						enc1.reset();
 						counter++;
 					} else {
-						motorSet((propGyro(20, angle) * -.2), (propGyro(20, angle) * .2)); // or
-						// else
-						// keep
-						// turning
+						motorSet((propGyro(30, angle) * -TURN_CONSTANT), (propGyro(30, angle) * TURN_CONSTANT));
 					}
 				}
 				if (counter == 2) {
@@ -290,11 +271,12 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 3) {
-					if (angle <= -20) { // turn to face the switch
+					if (angle <= -30) { // turn to face the switch
 						motorSet(0, 0);
+						enc1.reset();
 						counter++;
 					} else {
-						motorSet((propGyro(0, angle) * .3), (propGyro(0, angle) * -.3));
+						motorSet((propGyro(-30, angle) * TURN_CONSTANT), (propGyro(-30, angle) * -TURN_CONSTANT));
 						// or else keep turning
 					}
 				}
@@ -469,7 +451,7 @@ public class Robot extends IterativeRobot {
 						enc1.reset();
 						counter++;
 					} else {
-						motorSet((prop(-90, angle) * .3), (prop(-90, angle) * -.3));
+						motorSet((propGyro(-90, angle) * TURN_CONSTANT), (propGyro(-90, angle) * -TURN_CONSTANT));
 					}
 				}
 				if (counter == 4) { // move for the third time
@@ -487,91 +469,24 @@ public class Robot extends IterativeRobot {
 						enc1.reset();
 						counter++;
 					} else {
-						motorSet((prop(-90, angle) * .3), (prop(-90, angle) * -.3));
+						motorSet((propGyro(-90, angle) * TURN_CONSTANT), (propGyro(-90, angle) * -TURN_CONSTANT));
 					}
 				}
 				// TODO: Intake code
 			}
 			break;
 
-		case fallbackLeft:
-			// If our switch is on the left, place a cube in it. Otherwise, cross baseline.
-			// This is a fallback in case we cannot finish all auto before Deep Run.
-			if (FMS.charAt(0) == 'L') {
-				if (counter == 0) {
-					if (dist >= 9.5) { // 9.5 feet TODO: Check distance
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet(prop(9.5, dist) * -1, prop(9.5, dist) * -1);
-					}
-				}
-				if (counter == 1) {
-					// TODO: Intake code
-				}
-				if (counter == 2) {
-					motorSet(0, 0);
-				}
-			} else {
-				if (counter == 0) {
-					if (dist >= 9.5) { // 9.5 feet
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet(prop(9.5, dist) * -1, prop(9.5, dist) * -1);
-					}
-				}
-				if (counter == 1) {
-					motorSet(0, 0);
-				}
-			}
-			break;
-		case fallbackRight:
-			// If our switch is on the right, place a cube in it. Otherwise, cross baseline.
-			// This is a fallback in case we cannot finish all auto before Deep Run.
-			if (FMS.charAt(0) == 'R') {
-				if (counter == 0) {
-					if (dist >= 9.5) { // 9.5 feet TODO: Check distance
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet(prop(9.5, dist) * -1, prop(9.5, dist) * -1);
-					}
-				}
-				if (counter == 1) {
-					// TODO: Intake code
-				}
-				if (counter == 2) {
-					motorSet(0, 0);
-				}
-			} else {
-				if (counter == 0) {
-					if (dist >= 9.5) { // 9.5 feet
-						motorSet(0, 0);
-						counter++;
-					} else {
-						motorSet(prop(9.5, dist) * -1, prop(9.5, dist) * -1);
-					}
-				}
-				if (counter == 1) {
-					motorSet(0, 0);
-				}
-			}
-			break;
 		case defaultAuto:
 			// Turns 45 degrees
-			if (counter == 0) {
-				if (angle <= -20) {
-					motorSet(0, 0);
-					counter++;
-					System.out.println("test");
-				} else { // turns right
-					// TODO: TEST IN LIBRARY
-					motorSet((propGyro(-20, angle) * .5), (propGyro(-20, angle)) * -.5);
-				}
+			if (counter == 0)
+			{
+				motorSet(-.2, -.2);
+				Timer.delay(3);
+				counter++;
 			}
-			if (counter == 1) {
-				motorSet(0, 0);
+			if (counter == 1)
+			{
+				motorSet(0,0);
 			}
 
 			break;
@@ -588,19 +503,21 @@ public class Robot extends IterativeRobot {
 
 		/*
 		 * PDP Channel Output for Debugging Current Issues double currentZero =
-		 * pdp.getCurrent(0); double currentOne = pdp.getCurrent(1); double currentTwo =
-		 * pdp.getCurrent(2); double currentThree = pdp.getCurrent(3); double
-		 * currentFour = pdp.getCurrent(4); double currentFive = pdp.getCurrent(5);
-		 * double currentSix = pdp.getCurrent(6); double currentSeven =
-		 * pdp.getCurrent(7); double currentEight = pdp.getCurrent(8); double
-		 * currentNine = pdp.getCurrent(9); double currentTen = pdp.getCurrent(10);
-		 * double currentEleven = pdp.getCurrent(11); double currentTwelve =
-		 * pdp.getCurrent(12); double currentThirteen = pdp.getCurrent(13); double
-		 * currentFourteen = pdp.getCurrent(14); double currentFifteen =
-		 * pdp.getCurrent(15); double currentSum = currentZero + currentOne + currentTwo
-		 * + currentThree + currentFour + currentFive + currentSix + currentSeven +
-		 * currentEight + currentNine + currentTen + currentEleven + currentTwelve +
-		 * currentThirteen + currentFourteen + currentFifteen;
+		 * pdp.getCurrent(0); double currentOne = pdp.getCurrent(1); double
+		 * currentTwo = pdp.getCurrent(2); double currentThree =
+		 * pdp.getCurrent(3); double currentFour = pdp.getCurrent(4); double
+		 * currentFive = pdp.getCurrent(5); double currentSix =
+		 * pdp.getCurrent(6); double currentSeven = pdp.getCurrent(7); double
+		 * currentEight = pdp.getCurrent(8); double currentNine =
+		 * pdp.getCurrent(9); double currentTen = pdp.getCurrent(10); double
+		 * currentEleven = pdp.getCurrent(11); double currentTwelve =
+		 * pdp.getCurrent(12); double currentThirteen = pdp.getCurrent(13);
+		 * double currentFourteen = pdp.getCurrent(14); double currentFifteen =
+		 * pdp.getCurrent(15); double currentSum = currentZero + currentOne +
+		 * currentTwo + currentThree + currentFour + currentFive + currentSix +
+		 * currentSeven + currentEight + currentNine + currentTen +
+		 * currentEleven + currentTwelve + currentThirteen + currentFourteen +
+		 * currentFifteen;
 		 */
 
 		SmartDashboard.putNumber("Angle: ", angle);
@@ -610,8 +527,8 @@ public class Robot extends IterativeRobot {
 
 		/*
 		 * PDP values to Dashboard SmartDashboard.putNumber("PDP Channel 0: ",
-		 * currentZero); SmartDashboard.putNumber("PDP Channel 1: ", currentOne);
-		 * SmartDashboard.putNumber("PDP Channel 2: ", currentTwo);
+		 * currentZero); SmartDashboard.putNumber("PDP Channel 1: ",
+		 * currentOne); SmartDashboard.putNumber("PDP Channel 2: ", currentTwo);
 		 * SmartDashboard.putNumber("PDP Channel 3: ", currentThree);
 		 * SmartDashboard.putNumber("PDP Channel 4: ", currentFour);
 		 * SmartDashboard.putNumber("PDP Channel 5: ", currentFive);
@@ -641,8 +558,8 @@ public class Robot extends IterativeRobot {
 	}
 
 	/**
-	 * Get the proportion of motor speed based on the distance to the target value.
-	 * Used in auto.
+	 * Get the proportion of motor speed based on the distance to the target
+	 * value. Used in auto.
 	 * 
 	 * @param target
 	 *            the target value
@@ -652,7 +569,7 @@ public class Robot extends IterativeRobot {
 	 */
 	public static double prop(double target, double currentEnc) {
 		if (currentEnc < target / 2.0) { // speeding up
-			return 1 - ((target - currentEnc) / target) + 0.2;
+			return 1 - (((target - currentEnc) / target) + 0.2);
 		} else if (currentEnc >= target) { // stops the motors
 			return 0;
 		} else if ((target - currentEnc) / target < 0.3) { // levels off at a
@@ -672,8 +589,8 @@ public class Robot extends IterativeRobot {
 	}
 
 	/**
-	 * Gets the proportion to be used with motor speed during gyro turns. Used in
-	 * auto.
+	 * Gets the proportion to be used with motor speed during gyro turns. Used
+	 * in auto.
 	 * 
 	 * @param target
 	 *            the target value
@@ -691,9 +608,10 @@ public class Robot extends IterativeRobot {
 	}
 
 	/*
-	 * public static double prop(double target, double currentPos) { double relPos =
-	 * (target - currentPos) / target; if (relPos < .2) { return (double) .3; } else
-	 * if (relPos > .8) { return (double) .3; } return (double) .7; }
+	 * public static double prop(double target, double currentPos) { double
+	 * relPos = (target - currentPos) / target; if (relPos < .2) { return
+	 * (double) .3; } else if (relPos > .8) { return (double) .3; } return
+	 * (double) .7; }
 	 */
 
 	/**
