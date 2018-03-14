@@ -9,6 +9,7 @@ package org.usfirst.frc.team540.robot;
 
 import com.mindsensors.CANSD540;
 
+import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
@@ -16,6 +17,7 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Encoder;
@@ -31,7 +33,7 @@ public class Robot extends IterativeRobot {
 	final String switchTimeRight = "Right Switch From Side with Timer";
 	final String fallbackTimeLeft = "Fallback Switch with Timer (L)";
 	final String fallbackTimeRight = "Fallback Switch with Timer (R)";
-	
+
 	final String baselineEnc = "Baseline with encoder";
 	final String switchMiddleEnc = "Switch with encoder (M)";
 	final String switchRightEnc = "Switch with encoder(R)";
@@ -47,11 +49,11 @@ public class Robot extends IterativeRobot {
 	Joystick leftJoy, rightJoy;
 	XboxController xbox;
 	PowerDistributionPanel pdp;
-	
+
 	// Sensor fields
 	Encoder enc1, enc2;
-	//ADXRS450_Gyro gyro;
-	AnalogGyro gyro;
+	ADXRS450_Gyro gyro;
+	// AnalogGyro gyro;
 	AnalogInput IR;
 
 	// will be used in driveCode() to get current movement
@@ -59,7 +61,7 @@ public class Robot extends IterativeRobot {
 
 	// sensor fields
 	double angle, irDist, pulse, dist, liftPulse;
-	
+
 	double scale;
 
 	boolean height, toggle;
@@ -74,6 +76,10 @@ public class Robot extends IterativeRobot {
 	// Counter and side for Auto and reverse for tele-op
 	int counter, reverse, side;
 
+	// WPI PIDController
+	PIDController motorEncPIDController;
+	PIDEncMotorOutputHandler motorPIDEnc;
+
 	@Override
 	public void robotInit() {
 		// Default currently turns
@@ -81,10 +87,9 @@ public class Robot extends IterativeRobot {
 		chooser.addObject("Baseline with timer (From Side Position)", baselineTim);
 		chooser.addObject("Left Switch From Side(Timer)", switchTimeLeft);
 		chooser.addObject("Right Switch From Side (Timer)", switchTimeRight);
-		chooser.addObject("Fallback Left Switch (Timer)", fallbackTimeLeft);		
+		chooser.addObject("Fallback Left Switch (Timer)", fallbackTimeLeft);
 		chooser.addObject("Fallback Right Switch (Timer)", fallbackTimeRight);
 
-		
 		chooser.addObject("Baseline with encoder (From Side Position)", baselineEnc);
 		chooser.addObject("Switch with Encoder (From Left Position); NOT TESTED", switchLeftEnc);
 		chooser.addObject("Switch with Encoder (From Right Position); NOT TESTED", switchRightEnc);
@@ -131,7 +136,8 @@ public class Robot extends IterativeRobot {
 		enc2.setSamplesToAverage(10);
 
 		// sensors
-		gyro = new AnalogGyro(1);
+		gyro = new ADXRS450_Gyro();
+		// gyro = new AnalogGyro(1);
 		IR = new AnalogInput(0);
 
 		// calibrates sensors
@@ -147,32 +153,41 @@ public class Robot extends IterativeRobot {
 
 		// initializes toggle
 		toggle = false;
-		
+
 		// initializes scale
 		scale = 0.75;
 
 		// initialize voltage ramps
-		
+
 		frontLeft.setVoltageRamp(100);
 		midLeft.setVoltageRamp(100);
 		backLeft.setVoltageRamp(100);
 		frontRight.setVoltageRamp(100);
 		midRight.setVoltageRamp(100);
 		backRight.setVoltageRamp(100);
-		
+
 		intake1.setVoltageRamp(100);
 		intake2.setVoltageRamp(100);
 		intakeVert.setVoltageRamp(100);
-		
+
 		// Camera Server
-		CameraServer.getInstance().addAxisCamera("10.5.40.50");
-		CameraServer.getInstance().startAutomaticCapture();
+		CameraServer server = CameraServer.getInstance();
+		UsbCamera cam = server.startAutomaticCapture();
+		cam.setResolution(320, 240);
+		cam.setFPS(30);
 
 		// pdp for debugging purposes
 		pdp = new PowerDistributionPanel();
 
 		// FMS Initialization
 		FMS = "";
+
+		// WPI PID
+		motorPIDEnc = new PIDEncMotorOutputHandler(frontLeft, midLeft, backLeft, frontRight, midRight, backRight);
+
+		// P, I, D, input (encoder), output (motor controller controller)
+		motorEncPIDController = new PIDController(2, 0, 0, enc1, motorPIDEnc);
+		motorEncPIDController.setSetpoint(0);
 	}
 
 	public void autonomousInit() {
@@ -213,7 +228,103 @@ public class Robot extends IterativeRobot {
 		switch (autoSelected) {
 
 		// MOTORS ARE BOTH INVERTED IN AUTO (no reason found, but it works)
-		case baselineTim: // used in case encoders do not work; not accurate at the moment
+		case baselineTim: // used in case encoders do not work; not accurate at
+							// the moment
+			if (counter == 0) {
+				motorSet(-.5, -.5); // go forward to 2 secs
+				Timer.delay(3);
+				motorSet(0, 0);
+				counter++;
+			}
+			if (counter == 1) {
+				motorSet(0, 0);
+			}
+			break;
+
+		case switchTimeLeft:
+			if (counter == 0) {
+				motorSet(-.5, -.5); // go forward to 2 secs
+				Timer.delay(2.8); // TODO: fine tune the time
+				motorSet(0, 0);
+				Timer.delay(1);
+				gyro.reset();
+				counter++;
+			}
+			if (FMS.charAt(0) == 'L') {
+
+				if (counter == 1) {
+					if (angle >= 90) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet(-propGyro(90, angle), propGyro(90, angle));
+					}
+				}
+				if (counter == 2) {
+					motorSet(-.5, -.5);
+					Timer.delay(1);
+					motorSet(0, 0);
+					intakeVert.set(0.8);
+					intakeMotorSet(1, 1);
+					Timer.delay(2);
+					intakeVert.set(0.15);
+					intakeMotorSet(-1, -1);
+					Timer.delay(2);
+					intakeMotorSet(0, 0);
+					counter++;
+				}
+				if (counter == 3) {
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
+				}
+			} else {
+				motorSet(0, 0);
+			}
+			break;
+
+		case switchTimeRight:
+			if (counter == 0) {
+				motorSet(-.5, -.5); // go forward to 2 secs
+				Timer.delay(2.8); // TODO: fine tune the time
+				motorSet(0, 0);
+				Timer.delay(1);
+				gyro.reset();
+				counter++;
+			}
+			if (FMS.charAt(0) == 'R') {
+
+				if (counter == 1) {
+					if (angle <= -90) {
+						motorSet(0, 0);
+						counter++;
+					} else {
+						motorSet(propGyro(-90, angle), -propGyro(-90, angle));
+					}
+				}
+				if (counter == 2) {
+					motorSet(-.5, -.5);
+					Timer.delay(1);
+					motorSet(0, 0);
+					intakeVert.set(0.8);
+					intakeMotorSet(1, 1);
+					Timer.delay(2);
+					intakeVert.set(0.15);
+					intakeMotorSet(-1, -1);
+					Timer.delay(2);
+					intakeMotorSet(0, 0);
+					counter++;
+				}
+				if (counter == 3) {
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
+				}
+			} else {
+				motorSet(0, 0);
+			}
+			break;
+
+		case fallbackTimeLeft: // used in case encoders do not work; not
+								// accurate at the moment
 			if (counter == 0) {
 				motorSet(-.5, -.5); // go forward to 2 secs
 				Timer.delay(3); // TODO: fine tune the time
@@ -221,120 +332,6 @@ public class Robot extends IterativeRobot {
 				counter++;
 			}
 			if (counter == 1) {
-				motorSet(0,0);
-			}
-			break;
-			
-		case switchTimeLeft:
-			if (counter == 0)
-			{
-				motorSet(-.5, -.5); // go forward to 2 secs
-				Timer.delay(3); // TODO: fine tune the time
-				motorSet(0, 0);
-				Timer.delay(2);
-				gyro.reset();
-				counter++;
-			}
-			if (FMS.charAt(0) == 'L')
-			{
-				
-				if (counter == 1)
-				{
-					if (angle >= 90)
-					{
-						motorSet(0,0);
-						counter++;
-					}
-					else
-					{
-						motorSet(-propGyro(90, angle), propGyro(90, angle));
-					}
-				}
-				if (counter == 2)
-				{
-					motorSet(-.5, -.5);
-					Timer.delay(0.5);
-					motorSet(0,0);
-					intakeVert.set(0.8);
-					intakeMotorSet(.5, .5);
-					Timer.delay(2);
-					intakeVert.set(0.15);
-					intakeMotorSet(-1, -1);
-					Timer.delay(2);
-					intakeMotorSet(0, 0);
-					counter++;
-				}
-				if (counter == 3)
-				{
-					motorSet(0,0);
-					intakeMotorSet(0,0);
-				}
-			}
-			else
-			{
-				motorSet(0,0);
-			}
-			break;
-			
-		case switchTimeRight:
-			if (counter == 0)
-			{
-				motorSet(-.5, -.5); // go forward to 2 secs
-				Timer.delay(3); // TODO: fine tune the time
-				motorSet(0, 0);
-				Timer.delay(1);
-				gyro.reset();
-				counter++;
-			}
-			if (FMS.charAt(0) == 'R')
-			{
-				
-				if (counter == 1)
-				{
-					if (angle <= -90)
-					{
-						motorSet(0,0);
-						counter++;
-					}
-					else
-					{
-						motorSet(propGyro(-90, angle), -propGyro(-90, angle));
-					}
-				}
-				if (counter == 2)
-				{
-					motorSet(-.5, -.5);
-					Timer.delay(0.5);
-					motorSet(0,0);
-					intakeVert.set(0.8);
-					intakeMotorSet(.5, .5);
-					Timer.delay(2);
-					intakeVert.set(0.15);
-					intakeMotorSet(-1, -1);
-					Timer.delay(2);
-					intakeMotorSet(0, 0);
-					counter++;
-				}
-				if (counter == 3)
-				{
-					motorSet(0,0);
-					intakeMotorSet(0,0);
-				}
-			}
-			else
-			{
-				motorSet(0,0);
-			}
-			break;
-
-		case fallbackTimeLeft: // used in case encoders do not work; not accurate at the moment
-			if (counter == 0) {
-				motorSet(-.5, -.5); // go forward to 2 secs
-				Timer.delay(3); // TODO: fine tune the time
-				motorSet(0, 0);
-				counter++;
-			}
-			if (counter == 1 ) {
 				if (FMS.charAt(0) == 'L') {
 					intakeVert.set(0.5);
 					Timer.delay(2);
@@ -342,15 +339,15 @@ public class Robot extends IterativeRobot {
 					intakeMotorSet(-1, -1);
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
-				}
-				else {
-					motorSet(0,0);
+				} else {
+					motorSet(0, 0);
 				}
 				counter++;
 			}
 			break;
-		
-		case fallbackTimeRight: // used in case encoders do not work; not accurate at the moment
+
+		case fallbackTimeRight: // used in case encoders do not work; not
+								// accurate at the moment
 			if (counter == 0) {
 				motorSet(-.5, -.5); // go forward to 2 secs
 				Timer.delay(3); // TODO: fine tune the time
@@ -368,15 +365,13 @@ public class Robot extends IterativeRobot {
 					motorSet(-.6, -.6);
 					Timer.delay(0.5);
 					motorSet(0, 0);
-				}
-				else {
-					motorSet(0,0);
+				} else {
+					motorSet(0, 0);
 				}
 				counter++;
 			}
 			break;
 
-			
 		case baselineEnc:
 			if (counter == 0) {
 				if (dist >= 9.5) { // 9.5 feet
@@ -837,7 +832,19 @@ public class Robot extends IterativeRobot {
 
 		case defaultAuto:
 			if (counter == 0) {
-				motorSet(0,0);
+				motorSet(0, 0);
+				motorEncPIDController.setSetpoint(14);
+				motorEncPIDController.reset();
+				motorEncPIDController.enable();
+			}
+			if (counter == 1) {
+				if (dist >= 14) {
+					motorSet(0, 0);
+					gyro.reset();
+					counter++;
+				} else {
+					motorSet(prop(14, dist), prop(14, dist));
+				}
 			}
 			break;
 		}
@@ -851,53 +858,53 @@ public class Robot extends IterativeRobot {
 		pulse = enc1.get();
 		dist = enc1.getDistance();
 		liftPulse = enc2.get();
-		
-		double currentZero = pdp.getCurrent(0); 
-		double currentOne = pdp.getCurrent(1); 
-		double currentTwo = pdp.getCurrent(2); 
-		double currentThree = pdp.getCurrent(3); 
-		double currentFour = pdp.getCurrent(4); 
-		double currentFive = pdp.getCurrent(5); 
-		double currentSix = pdp.getCurrent(6); 
-		double currentSeven = pdp.getCurrent(7); 
-		double currentEight = pdp.getCurrent(8); 
-		double currentNine = pdp.getCurrent(9); 
-		double currentTen = pdp.getCurrent(10); 
-		double currentEleven = pdp.getCurrent(11); 
-		double currentTwelve = pdp.getCurrent(12); 
+
+		double currentZero = pdp.getCurrent(0);
+		double currentOne = pdp.getCurrent(1);
+		double currentTwo = pdp.getCurrent(2);
+		double currentThree = pdp.getCurrent(3);
+		double currentFour = pdp.getCurrent(4);
+		double currentFive = pdp.getCurrent(5);
+		double currentSix = pdp.getCurrent(6);
+		double currentSeven = pdp.getCurrent(7);
+		double currentEight = pdp.getCurrent(8);
+		double currentNine = pdp.getCurrent(9);
+		double currentTen = pdp.getCurrent(10);
+		double currentEleven = pdp.getCurrent(11);
+		double currentTwelve = pdp.getCurrent(12);
 		double currentThirteen = pdp.getCurrent(13);
-		double currentFourteen = pdp.getCurrent(14); 
-		double currentFifteen = pdp.getCurrent(15); 
-		double currentSum = currentZero + currentOne +
-		currentTwo + currentThree + currentFour + currentFive + currentSix +
-		currentSeven + currentEight + currentNine + currentTen +
-		currentEleven + currentTwelve + currentThirteen + currentFourteen +
-		currentFifteen;
-		
+		double currentFourteen = pdp.getCurrent(14);
+		double currentFifteen = pdp.getCurrent(15);
+		double currentSum = currentZero + currentOne + currentTwo + currentThree + currentFour + currentFive
+				+ currentSix + currentSeven + currentEight + currentNine + currentTen + currentEleven + currentTwelve
+				+ currentThirteen + currentFourteen + currentFifteen;
+
 		SmartDashboard.putNumber("Angle: ", angle);
 		SmartDashboard.putNumber("IR Distance: ", irDist);
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
 		SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
-		
-		SmartDashboard.putNumber("PDP Channel 0: ", currentZero);
-		SmartDashboard.putNumber("PDP Channel 1: ", currentOne);
-		SmartDashboard.putNumber("PDP Channel 2: ", currentTwo);
-		SmartDashboard.putNumber("PDP Channel 3: ", currentThree);
-		SmartDashboard.putNumber("PDP Channel 4: ", currentFour);
-		SmartDashboard.putNumber("PDP Channel 5: ", currentFive);
-		SmartDashboard.putNumber("PDP Channel 6: ", currentSix);
-		SmartDashboard.putNumber("PDP Channel 7: ", currentSeven);
-		SmartDashboard.putNumber("PDP Channel 8: ", currentEight);
-		SmartDashboard.putNumber("PDP Channel 9: ", currentNine);
-		SmartDashboard.putNumber("PDP Channel 10: ", currentTen);
-		SmartDashboard.putNumber("PDP Channel 11: ", currentEleven);
-		SmartDashboard.putNumber("PDP Channel 12: ", currentTwelve);
-		SmartDashboard.putNumber("PDP Channel 13: ", currentThirteen);
-		SmartDashboard.putNumber("PDP Channel 14: ", currentFourteen);
-		SmartDashboard.putNumber("PDP Channel 15: ", currentFifteen);
-		SmartDashboard.putNumber("Total PDP Current: ", currentSum);
-		
+
+		/*
+		 * SmartDashboard.putNumber("PDP Channel 0: ", currentZero);
+		 * SmartDashboard.putNumber("PDP Channel 1: ", currentOne);
+		 * SmartDashboard.putNumber("PDP Channel 2: ", currentTwo);
+		 * SmartDashboard.putNumber("PDP Channel 3: ", currentThree);
+		 * SmartDashboard.putNumber("PDP Channel 4: ", currentFour);
+		 * SmartDashboard.putNumber("PDP Channel 5: ", currentFive);
+		 * SmartDashboard.putNumber("PDP Channel 6: ", currentSix);
+		 * SmartDashboard.putNumber("PDP Channel 7: ", currentSeven);
+		 * SmartDashboard.putNumber("PDP Channel 8: ", currentEight);
+		 * SmartDashboard.putNumber("PDP Channel 9: ", currentNine);
+		 * SmartDashboard.putNumber("PDP Channel 10: ", currentTen);
+		 * SmartDashboard.putNumber("PDP Channel 11: ", currentEleven);
+		 * SmartDashboard.putNumber("PDP Channel 12: ", currentTwelve);
+		 * SmartDashboard.putNumber("PDP Channel 13: ", currentThirteen);
+		 * SmartDashboard.putNumber("PDP Channel 14: ", currentFourteen);
+		 * SmartDashboard.putNumber("PDP Channel 15: ", currentFifteen);
+		 * SmartDashboard.putNumber("Total PDP Current: ", currentSum);
+		 */
+
 		// calls drive() to drive
 		drive();
 
@@ -942,10 +949,10 @@ public class Robot extends IterativeRobot {
 	 * @return the proportion of the motor speed constant to set
 	 */
 	public static double propGyro(double target, double currentGyro) {
-		if (((target - currentGyro) / target) > 0.5) {
+		if (((target - currentGyro) / target) > 0.8) {
 			return ((target - currentGyro) / target);
 		} else {
-			return 0.5;
+			return 0.3;
 			// Use coefficient of 0.55 for comp if this doesnt work
 		}
 
@@ -957,11 +964,15 @@ public class Robot extends IterativeRobot {
 	 * Sets current positions of joysticks as values to left and right
 	 */
 	private void drive() {
-		if (leftJoy.getRawButton(1) == true) {
-			if (leftJoy.getRawButton(3))
-				reverse *= -1;
-			else if (leftJoy.getRawButton(2))
-				toggle = !toggle;
+		// if (leftJoy.getRawButton(1) == true) {
+		if (leftJoy.getRawButton(1) == true && leftJoy.getRawButton(3) == true) {
+			/*
+			 * if (leftJoy.getRawButton(3)) reverse *= -1; else if
+			 * (leftJoy.getRawButton(2)) toggle = !toggle;
+			 */
+			scale = 1;
+		} else {
+			scale = 0.75;
 		}
 
 		if (Math.abs(leftJoy.getY()) > 0.2) {
@@ -1084,10 +1095,10 @@ public class Robot extends IterativeRobot {
 	private void climb() {
 		if (xbox.getXButton() == true) {
 			// hooker = xbox.getRawAxis(2);
-			hooker = 0.85;
+			hooker = 0.5;
 		} else if (xbox.getAButton() == true) {
 			// xbox.getRawButton(5) == true
-			hooker = -1;
+			hooker = -.75;
 		} else {
 			hooker = 0;
 		}
