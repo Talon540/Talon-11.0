@@ -22,7 +22,9 @@ public class PIDEncMotorOutputHandler implements PIDOutput {
 	@Override
 	/**
 	 * Writes the output from the PIDController, and sets the motor speeds.
-	 * param output the output from the PIDController
+	 * 
+	 * @param output
+	 *            the output from the PIDController
 	 */
 	public void pidWrite(double output) {
 		this.output = output;
@@ -30,7 +32,8 @@ public class PIDEncMotorOutputHandler implements PIDOutput {
 	}
 
 	/**
-	 * Sets motor speed values
+	 * Sets motor speed values. Positive values (should) go forward, negative
+	 * backward.
 	 * 
 	 * @param left
 	 *            - left motor speed
@@ -42,9 +45,9 @@ public class PIDEncMotorOutputHandler implements PIDOutput {
 		midLeft.set(left);
 		backLeft.set(left);
 
-		frontRight.set(-right);
-		midRight.set(-right);
-		backRight.set(-right);
+		frontRight.set(right);
+		midRight.set(right);
+		backRight.set(right);
 	}
 
 }
