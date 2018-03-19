@@ -79,6 +79,8 @@ public class Robot extends IterativeRobot {
 	// WPI PIDController
 	PIDController motorEncPIDController;
 	PIDEncMotorOutputHandler motorPIDEnc;
+	PIDController motorGyroPIDController;
+	PIDGyroMotorOutputHandler motorPIDGyro;
 
 	@Override
 	public void robotInit() {
@@ -182,12 +184,26 @@ public class Robot extends IterativeRobot {
 		// FMS Initialization
 		FMS = "";
 
-		// WPI PID
+		// WPI PID - Encoder
 		motorPIDEnc = new PIDEncMotorOutputHandler(frontLeft, midLeft, backLeft, frontRight, midRight, backRight);
 
 		// P, I, D, input (encoder), output (motor controller controller)
 		motorEncPIDController = new PIDController(2, 0, 0, enc1, motorPIDEnc);
 		motorEncPIDController.setSetpoint(0);
+		motorEncPIDController.setPercentTolerance(15); // TODO: Determine acceptable % tolerance
+		motorEncPIDController.setInputRange(-100000, 100000); // TODO: Figure out if this is necessary and test range
+		motorEncPIDController.setOutputRange(-1.0, 1.0); // Prevent bad things from happening
+
+		// Gyro
+		motorPIDGyro = new PIDGyroMotorOutputHandler(frontLeft, midLeft, backLeft, frontRight, midRight, backRight);
+
+		// P, I, D, input (gyro), output (motor controller controller)
+		motorGyroPIDController = new PIDController(2, 0, 0, enc1, motorPIDGyro);
+		motorGyroPIDController.setSetpoint(0);
+		motorGyroPIDController.setPercentTolerance(15); // TODO: Determine acceptable % tolerance
+		motorGyroPIDController.setInputRange(0, 359.99); // TODO: Make sure this is correct
+		motorGyroPIDController.setOutputRange(-1.0, 1.0); // Prevent bad things from happening
+		motorGyroPIDController.setContinuous();
 	}
 
 	public void autonomousInit() {
@@ -830,24 +846,41 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 
-		case defaultAuto:
+		case defaultAuto: // TODO: This TODO makes it easy to find PID testing in the maze of TODOs!
+			// Test of encoder and distance PIDs
+			// Go forward using the Encoder PIDController
 			if (counter == 0) {
-				motorSet(0, 0);
-				motorEncPIDController.setSetpoint(14);
-				motorEncPIDController.reset();
+				motorEncPIDController.setSetpoint(10.0); // TODO: Determine units (probably feet)
 				motorEncPIDController.enable();
-			}
-			if (counter == 1) {
-				if (dist >= 14) {
+				counter++;
+			} else if (counter == 1) {
+				if (motorEncPIDController.onTarget()) { // Cut off the motors at the target value
 					motorSet(0, 0);
-					gyro.reset();
+					motorEncPIDController.disable();
 					counter++;
-				} else {
-					motorSet(prop(14, dist), prop(14, dist));
 				}
+			}
+			// Turn 90 degrees right (clockwise) using the Gyro PIDController
+			else if (counter == 2) {
+				motorGyroPIDController.setSetpoint(90);
+				motorGyroPIDController.enable();
+				counter++;
+			} else if (counter == 3) {
+				if (motorGyroPIDController.onTarget()) {
+					motorSet(0, 0);
+					motorGyroPIDController.disable();
+					counter++;
+				}
+			}
+			// Shut down
+			else if (counter >= 2) {
+				motorEncPIDController.disable();
+				motorGyroPIDController.disable();
+				motorSet(0, 0);
 			}
 			break;
 		}
+
 	}
 
 	@Override
@@ -919,8 +952,8 @@ public class Robot extends IterativeRobot {
 	}
 
 	/**
-	 * Get the proportion of motor speed based on the distance to the target
-	 * value. Used in auto.
+	 * Get the proportion of motor speed based on the distance to the target value.
+	 * Used in auto.
 	 * 
 	 * @param target
 	 *            the target value
@@ -939,8 +972,8 @@ public class Robot extends IterativeRobot {
 	}
 
 	/**
-	 * Gets the proportion to be used with motor speed during gyro turns. Used
-	 * in auto.
+	 * Gets the proportion to be used with motor speed during gyro turns. Used in
+	 * auto.
 	 * 
 	 * @param target
 	 *            the target value
@@ -967,8 +1000,8 @@ public class Robot extends IterativeRobot {
 		// if (leftJoy.getRawButton(1) == true) {
 		if (leftJoy.getRawButton(1) == true && leftJoy.getRawButton(3) == true) {
 			/*
-			 * if (leftJoy.getRawButton(3)) reverse *= -1; else if
-			 * (leftJoy.getRawButton(2)) toggle = !toggle;
+			 * if (leftJoy.getRawButton(3)) reverse *= -1; else if (leftJoy.getRawButton(2))
+			 * toggle = !toggle;
 			 */
 			scale = 1;
 		} else {
@@ -1091,7 +1124,6 @@ public class Robot extends IterativeRobot {
 	/**
 	 * Sets hook & winch motor speed
 	 */
-	// TODO:
 	private void climb() {
 		if (xbox.getXButton() == true) {
 			// hooker = xbox.getRawAxis(2);
