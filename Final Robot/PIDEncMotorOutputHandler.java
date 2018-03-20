@@ -41,13 +41,15 @@ public class PIDEncMotorOutputHandler implements PIDOutput {
 	 *            - right motor speed
 	 */
 	private void motorSet(double left, double right) {
-		frontLeft.set(left);
-		midLeft.set(left);
-		backLeft.set(left);
+		frontLeft.set(-left);
+		midLeft.set(-left);
+		backLeft.set(-left);
 
-		frontRight.set(right);
-		midRight.set(right);
-		backRight.set(right);
+		frontRight.set(-right);
+		midRight.set(-right);
+		backRight.set(-right);
+		
+		System.out.println(left + ", " + right);
 	}
 
 }
