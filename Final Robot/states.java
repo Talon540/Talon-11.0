@@ -45,7 +45,7 @@ public class Robot extends IterativeRobot {
 	CANSD540 frontLeft, frontRight, backLeft, backRight, midLeft, midRight, intake1, intake2, intakeVert, hook, winch;
 	Joystick leftJoy, rightJoy;
 	XboxController xbox;
-	PowerDistributionPanel pdp;
+	//PowerDistributionPanel pdp;
 
 	// Sensor fields
 	Encoder enc1, enc2;
@@ -57,11 +57,14 @@ public class Robot extends IterativeRobot {
 	double left, right, intakeL, intakeR, hooker, wench;
 
 	// sensor fields
-	double angle, irDist, pulse, dist, liftPulse;
+	double angle, irDist, pulse, dist; 
+	//double liftPulse;
 
 	double scale;
 
-	boolean height, toggle, cube;
+	boolean height, toggle, cube, still;
+	
+	//int[] prevAngles;
 
 	final static double TURN_CONSTANT = 0.5;
 
@@ -95,10 +98,10 @@ public class Robot extends IterativeRobot {
 
 		// wheel motors
 		frontLeft = new CANSD540(6);
-		midLeft = new CANSD540(7);
-		backLeft = new CANSD540(8);
-		frontRight = new CANSD540(3);
-		midRight = new CANSD540(4);
+		backLeft = new CANSD540(7);
+		//backLeft = new CANSD540(8);
+		//frontRight = new CANSD540(3);
+		frontRight = new CANSD540(4);
 		backRight = new CANSD540(5);
 
 		// intake motors
@@ -123,12 +126,13 @@ public class Robot extends IterativeRobot {
 		enc1.setDistancePerPulse(0.00078487);
 		enc1.setSamplesToAverage(10);
 
-		// intake lift encoder
+		// intake lift encoder NOT BEING USED
+		/*
 		enc2 = new Encoder(2, 3);
 		enc2.setMaxPeriod(0.1);
 		enc2.setMinRate(5);
 		enc2.setSamplesToAverage(10);
-
+		*/
 		// sensors
 		gyro = new ADXRS450_Gyro();
 		// gyro = new AnalogGyro(1);
@@ -151,13 +155,23 @@ public class Robot extends IterativeRobot {
 		// initializes scale
 		scale = 0.75;
 
+		// initializes previous angles
+		/*
+		prevAngles = new int[5];
+		prevAngles[0] = 0;
+		prevAngles[1] = 0;
+		prevAngles[2] = 0;
+		prevAngles[3] = 0;
+		prevAngles[4] = 0;
+		*/
+		
 		// initialize voltage ramps
 
 		frontLeft.setVoltageRamp(100);
-		midLeft.setVoltageRamp(100);
+		//midLeft.setVoltageRamp(100);
 		backLeft.setVoltageRamp(100);
 		frontRight.setVoltageRamp(100);
-		midRight.setVoltageRamp(100);
+		//midRight.setVoltageRamp(100);
 		backRight.setVoltageRamp(100);
 
 		intake1.setVoltageRamp(100);
@@ -172,7 +186,7 @@ public class Robot extends IterativeRobot {
 		// CameraServer.getInstance().startAutomaticCapture()
 
 		// pdp for debugging purposes
-		pdp = new PowerDistributionPanel();
+		//pdp = new PowerDistributionPanel();
 
 		// FMS Initialization
 		FMS = "";
@@ -203,7 +217,19 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		// Gets sensor values and displays them in SmartDashboard
+		/*prevAngles[4] = prevAngles[3];
+		prevAngles[3] = prevAngles[2];
+		prevAngles[2] = prevAngles[1];
+		prevAngles[1] = prevAngles[0];
+		prevAngles[0] = (int) angle;*/
 		angle = gyro.getAngle();
+		
+		/*if (prevAngles[4] == prevAngles[3] && prevAngles[3] == prevAngles[2] && prevAngles[2] == prevAngles[1] && prevAngles[1] == prevAngles[0] && prevAngles[0] == (int) angle) {
+			still = true;
+		} else {
+			still = false;
+		}*/
+		
 		irDist = IR.getVoltage();
 		pulse = enc1.get();
 		dist = Math.abs(enc1.getDistance());
@@ -379,6 +405,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 2) { // move away from the wall so it can turn
 										// by two feet
 						motorSet(0, 0);
+						Timer.delay(0.5);
 						gyro.reset();
 						counter++;
 					} else {
@@ -386,16 +413,17 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 1) {
-					if (angle <= -45) { // turns 20 degrees to the left
+					//if (angle <= -45 || still == true) { // turns 20 degrees to the left
+					if (angle <= -45) {
 						motorSet(0, 0);
 						enc1.reset();
 						counter++;
 					} else {
-						motorSet(propGyro(-45, angle), -propGyro(-45, angle));
+						motorSet(propGyro(-45, angle) * 1.2, -propGyro(-45, angle) * 1.2);
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 7) { // was 9 feet; now 7ft
+					if (dist >= 7) { // was 5 feet before, but that was for right side
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
@@ -405,17 +433,35 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 3) {
-					if (angle >= 45) { // turn to face the switch
+					//if (angle >= 42 || still == true) { // turn to face the switch
+					if (angle >= 42) {
 						motorSet(0, 0);
 						counter++;
 					} else { // TODO: fine-tune the turning function
-						motorSet(-propGyro(45, angle), propGyro(45, angle)); // or
+						motorSet(-propGyro(42, angle) * 1.2, propGyro(42, angle) * 1.2); // or
 						// else keep turning
 					}
 				}
-
+				if(counter == 4) {
+					motorSet(-0.5, -0.5);
+					Timer.delay(1);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 5) {
+					motorSet(0, 0);
+					intakeVert.set(-1);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					intakeMotorSet(1, 1);
+					Timer.delay(4);
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+					counter++;
+				}
+				/* OLD CODE
 				if (counter == 4) {
-					intakeVert.set(-.85);
+					intakeVert.set(-1);
 					Timer.delay(2);
 					intakeVert.set(-0.15);
 					enc1.reset();
@@ -424,7 +470,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 5) {
 					if (dist >= 3.5) { // 3.5 feet
 						motorSet(0, 0);
-						intakeMotorSet(-1, -1);
+						intakeMotorSet(1, 1);
 						Timer.delay(2);
 						intakeMotorSet(0, 0);
 						intakeVert.set(0);
@@ -432,7 +478,7 @@ public class Robot extends IterativeRobot {
 					} else {
 						motorSet(prop(3.5, dist), prop(3.5, dist));
 					}
-				}
+				}*/
 				if (counter == 6) {
 					motorSet(0, 0);
 					intakeMotorSet(0, 0);
@@ -444,6 +490,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 2) { // move away from the wall so it can turn
 										// by two feet
 						motorSet(0, 0);
+						Timer.delay(0.5);
 						gyro.reset();
 						counter++;
 					} else {
@@ -451,7 +498,8 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 1) {
-					if (angle >= 45) { // turns 45 degrees to the right
+					//if (angle >= 45 || still == true) { // turns 45 degrees to the right
+					if (angle >= 45) {
 						motorSet(0, 0);
 						enc1.reset();
 						counter++;
@@ -460,27 +508,46 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 7) { // was 9 feet; now 7 ft
+					if (dist >= 5) { // was 9 feet; now 7 ft
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
 						counter++;
 					} else {
-						motorSet(prop(7, dist), prop(7, dist));
+						motorSet(prop(5, dist), prop(5, dist));
 					}
 				}
 				if (counter == 3) {
-					if (angle <= -45) { // turn to face the switch
+					//if (angle <= -42 || still == true) { // turn to face the switch
+					if (angle <= -42) {
 						motorSet(0, 0);
+						enc1.reset();
 						counter++;
 					} else { // TODO: fine-tune the turning function
-						motorSet(propGyro(-45, angle), -propGyro(-45, angle)); // or
+						motorSet(propGyro(-42, angle), -propGyro(-42, angle)); // or
 						// else keep turning
 					}
 				}
-
-				if (counter == 4) {
-					intakeVert.set(-.85);
+				if(counter == 4) {
+					motorSet(-0.5, -0.5);
+					Timer.delay(1);
+					motorSet(0, 0);
+					counter++;
+				}
+				if (counter == 5) {
+					motorSet(0, 0);
+					intakeVert.set(-1);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					intakeMotorSet(1, 1);
+					Timer.delay(4);
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+					counter++;
+				}
+				/* OLD CODE
+				if (counter == 5) {
+					intakeVert.set(-1);
 					Timer.delay(2);
 					intakeVert.set(-0.15);
 					enc1.reset();
@@ -489,7 +556,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 5) {
 					if (dist >= 3.5) { // 3.5 feet
 						motorSet(0, 0);
-						intakeMotorSet(-1, -1);
+						intakeMotorSet(1, 1);
 						Timer.delay(2);
 						intakeMotorSet(0, 0);
 						intakeVert.set(0);
@@ -497,7 +564,7 @@ public class Robot extends IterativeRobot {
 					} else {
 						motorSet(prop(3.5, dist), prop(3.5, dist));
 					}
-				}
+				}*/
 				if (counter == 6) {
 					motorSet(0, 0);
 					intakeMotorSet(0, 0);
@@ -902,18 +969,7 @@ public class Robot extends IterativeRobot {
 			break;
 
 		case defaultAuto:
-			if (counter == 0) {
-				intakeVert.set(-1);
-				intakeMotorSet(-0.5, -0.5);
-				Timer.delay(2);
-				intakeVert.set(-.15);
-				intakeMotorSet(1, 1);
-				Timer.delay(2);
-				intakeVert.set(0);
-				intakeMotorSet(0, 0);
-				counter++;
-			}
-
+			motorSet(0,0);
 			break;
 		}
 	}
@@ -925,14 +981,14 @@ public class Robot extends IterativeRobot {
 		irDist = IR.getVoltage();
 		pulse = enc1.get();
 		dist = enc1.getDistance();
-		liftPulse = enc2.get();
+		//liftPulse = enc2.get();
 
 		if (irDist > 1) {
 			cube = true;
 		} else {
 			cube = false;
 		}
-
+		/*
 		double currentZero = pdp.getCurrent(0);
 		double currentOne = pdp.getCurrent(1);
 		double currentTwo = pdp.getCurrent(2);
@@ -952,12 +1008,12 @@ public class Robot extends IterativeRobot {
 		double currentSum = currentZero + currentOne + currentTwo + currentThree + currentFour + currentFive
 				+ currentSix + currentSeven + currentEight + currentNine + currentTen + currentEleven + currentTwelve
 				+ currentThirteen + currentFourteen + currentFifteen;
-
+		*/
 		SmartDashboard.putNumber("Angle: ", angle);
 		SmartDashboard.putNumber("IR Distance: ", irDist);
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
-		SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
+		//SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
 		SmartDashboard.putBoolean("Cube in intake: ", cube);
 
 		/*
@@ -1025,7 +1081,7 @@ public class Robot extends IterativeRobot {
 	 */
 	public static double propGyro(double target, double currentGyro) {
 		if (((target - currentGyro) / target) > 0.8) {
-			return ((target - currentGyro) / target);
+			return Math.abs(((target - currentGyro) / target));
 		} else {
 			return 0.23; //WAS 0.2
 		}
@@ -1092,11 +1148,11 @@ public class Robot extends IterativeRobot {
 	 */
 	private void motorSet(double left, double right) {
 		frontLeft.set(left);
-		midLeft.set(left);
+		//midLeft.set(left);
 		backLeft.set(left);
 
 		frontRight.set(-right);
-		midRight.set(-right);
+		//midRight.set(-right);
 		backRight.set(-right);
 	}
 
