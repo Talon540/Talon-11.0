@@ -4,13 +4,12 @@ package org.usfirst.frc.team540.robot;
 //Test Turning on a Carpet Surface
 //Test Elevator (Timer and Encoder)
 //Determine measurements for Middle Auto
-//Test Middle Auto
+// fix Middle Auto
 
 import com.mindsensors.CANSD540;
 
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
-//import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -32,7 +31,7 @@ public class Robot extends IterativeRobot {
 	final String fallbackTimeLeft = "Fallback Switch with Timer (L)";
 	final String fallbackTimeRight = "Fallback Switch with Timer (R)";
 
-	final String baselineEnc = "Baseline with encoder";
+	final String baselineEnc = " -- Baseline with encoder";
 	final String switchMiddleEnc = "Switch with encoder (M)";
 	final String switchRightEnc = "Switch with encoder(R)";
 	final String switchLeftEnc = "Switch with encoder (L)";
@@ -62,7 +61,7 @@ public class Robot extends IterativeRobot {
 
 	double scale;
 
-	boolean height, toggle;
+	boolean height, toggle, cube;
 
 	final static double TURN_CONSTANT = 0.5;
 
@@ -83,13 +82,14 @@ public class Robot extends IterativeRobot {
 		chooser.addObject("Right Switch From Side (Timer & Gyro)", switchTimeRight);
 		chooser.addObject("Fallback Left Switch (Dead Sensors)", fallbackTimeLeft);
 		chooser.addObject("Fallback Right Switch (Dead Sensors)", fallbackTimeRight);
-
 		chooser.addObject("Baseline with encoder (From Side Position)", baselineEnc);
-		chooser.addObject("Switch with Encoder (From Left Position, NOT TESTED)", switchLeftEnc);
-		chooser.addObject("Switch with Encoder (From Right Position, NOT TESTED)", switchRightEnc);
-		chooser.addObject("Switch with Encoder (From Middle Position, NOT TESTED)", switchMiddleEnc);
-		chooser.addObject("Fallback Switch (From Left Position w/ Sensors)", fallbackLeft);
-		chooser.addObject("Fallback Switch (From Right Position w/ Sensors)", fallbackRight);
+
+		chooser.addObject("Switch with Encoder (From Left Position)", switchLeftEnc);
+		chooser.addObject("Switch with Encoder (From Right Position)", switchRightEnc);
+
+		chooser.addObject(" -- Middle Switch with Encoder (From Middle Position)", switchMiddleEnc);
+		chooser.addObject(" -- Left Fallback Switch (From Left Position)", fallbackLeft);
+		chooser.addObject(" -- Right Fallback Switch (From Right Position)", fallbackRight);
 
 		SmartDashboard.putData("Auto choices", chooser);
 
@@ -135,8 +135,8 @@ public class Robot extends IterativeRobot {
 		IR = new AnalogInput(0);
 
 		// calibrates sensors
-		//gyro.reset();
-		//gyro.calibrate();
+		// gyro.calibrate();
+		// gyro.reset();
 		enc1.reset();
 
 		// initializes counter
@@ -168,7 +168,8 @@ public class Robot extends IterativeRobot {
 		CameraServer server = CameraServer.getInstance();
 		UsbCamera cam = server.startAutomaticCapture();
 		cam.setResolution(320, 240);
-		cam.setFPS(30);
+		cam.setFPS(15);
+		// CameraServer.getInstance().startAutomaticCapture()
 
 		// pdp for debugging purposes
 		pdp = new PowerDistributionPanel();
@@ -193,7 +194,7 @@ public class Robot extends IterativeRobot {
 		 * enemyFMS.replace('R', 'L'); enemyFMS = enemyFMS.replace('E', 'R');
 		 * SmartDashboard.putString("Enemy Switch Side: ", enemyFMS);
 		 */
-		
+
 		counter = 0;
 		gyro.reset();
 		enc1.reset();
@@ -235,7 +236,7 @@ public class Robot extends IterativeRobot {
 				Timer.delay(2.8); // TODO: fine tune the time
 				motorSet(0, 0);
 				Timer.delay(1);
-				//gyro.reset();
+				gyro.reset();
 				counter++;
 			}
 			if (FMS.charAt(0) == 'L') {
@@ -252,10 +253,9 @@ public class Robot extends IterativeRobot {
 					motorSet(-.5, -.5);
 					Timer.delay(1);
 					motorSet(0, 0);
-					intakeVert.set(0.8);
-					intakeMotorSet(1, 1);
+					intakeVert.set(-0.8);
 					Timer.delay(2);
-					intakeVert.set(0.15);
+					intakeVert.set(-0.15);
 					intakeMotorSet(-1, -1);
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
@@ -276,7 +276,7 @@ public class Robot extends IterativeRobot {
 				Timer.delay(2.8); // TODO: fine tune the time
 				motorSet(0, 0);
 				Timer.delay(1);
-				//gyro.reset();
+				gyro.reset();
 				counter++;
 			}
 			if (FMS.charAt(0) == 'R') {
@@ -293,10 +293,9 @@ public class Robot extends IterativeRobot {
 					motorSet(-.5, -.5);
 					Timer.delay(1);
 					motorSet(0, 0);
-					intakeVert.set(0.8);
-					intakeMotorSet(1, 1);
+					intakeVert.set(-0.85);
 					Timer.delay(2);
-					intakeVert.set(0.15);
+					intakeVert.set(-0.15);
 					intakeMotorSet(-1, -1);
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
@@ -314,16 +313,18 @@ public class Robot extends IterativeRobot {
 		case fallbackTimeLeft: // used in case no sensors work
 			if (counter == 0) {
 				motorSet(-.5, -.5); // go forward to 3 secs
-				Timer.delay(3); 
+				Timer.delay(3);
 				motorSet(0, 0);
 				counter++;
 			}
 			if (counter == 1) {
 				if (FMS.charAt(0) == 'L') {
-					intakeVert.set(0.5);
+					intakeVert.set(-1);
+					intakeMotorSet(-.5, -.5);
 					Timer.delay(2);
-					intakeVert.set(0.15);
-					intakeMotorSet(-1, -1);
+					intakeVert.set(-0.15);
+					Timer.delay(0.2);
+					intakeMotorSet(1, 1);
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
 				} else {
@@ -336,16 +337,15 @@ public class Robot extends IterativeRobot {
 		case fallbackTimeRight: // used in case sensors do not work
 			if (counter == 0) {
 				motorSet(-.5, -.5); // go forward to 3 secs
-				Timer.delay(3); 
+				Timer.delay(3);
 				motorSet(0, 0);
 				counter++;
 			}
 			if (counter == 1) {
 				if (FMS.charAt(0) == 'R') {
-					intakeVert.set(0.5);
+					intakeVert.set(-0.85);
 					Timer.delay(2);
-					intakeVert.set(0.15);
-					intakeMotorSet(-1, -1);
+					intakeVert.set(-0.15);
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
 					motorSet(-.6, -.6);
@@ -353,8 +353,8 @@ public class Robot extends IterativeRobot {
 					motorSet(0, 0);
 				} else {
 					motorSet(0, 0);
+					counter++;
 				}
-				counter++;
 			}
 			break;
 
@@ -379,7 +379,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 2) { // move away from the wall so it can turn
 										// by two feet
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(-.5, -.5);
@@ -395,12 +395,13 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 9) { // 9 feet
+					if (dist >= 7) { // was 9 feet; now 7ft
 						motorSet(0, 0);
-						//gyro.reset();
+						Timer.delay(0.5);
+						gyro.reset();
 						counter++;
 					} else {
-						motorSet(prop(9, dist), prop(9, dist));
+						motorSet(prop(7, dist), prop(7, dist));
 					}
 				}
 				if (counter == 3) {
@@ -414,9 +415,9 @@ public class Robot extends IterativeRobot {
 				}
 
 				if (counter == 4) {
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0.15);
+					intakeVert.set(-.85);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
 					enc1.reset();
 					counter++;
 				}
@@ -443,7 +444,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 2) { // move away from the wall so it can turn
 										// by two feet
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(-.5, -.5);
@@ -459,12 +460,13 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 9) { // 9 feet
+					if (dist >= 7) { // was 9 feet; now 7 ft
 						motorSet(0, 0);
-						//gyro.reset();
+						Timer.delay(0.5);
+						gyro.reset();
 						counter++;
 					} else {
-						motorSet(prop(9, dist), prop(9, dist));
+						motorSet(prop(7, dist), prop(7, dist));
 					}
 				}
 				if (counter == 3) {
@@ -478,9 +480,9 @@ public class Robot extends IterativeRobot {
 				}
 
 				if (counter == 4) {
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0.15);
+					intakeVert.set(-.85);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
 					enc1.reset();
 					counter++;
 				}
@@ -523,7 +525,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 14) { // move forward 168 in
 						motorSet(0, 0);
 						enc1.reset();
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(prop(14, dist), prop(14, dist));
@@ -546,14 +548,38 @@ public class Robot extends IterativeRobot {
 						motorSet(prop(2.66666666667, dist), prop(2.66666666667, dist));
 					}
 				}
-				// TODO: intake
+
+				if (counter == 3) { // lift the intake
+					intakeVert.set(-.85);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					counter++;
+				}
+				if (counter == 4) { // go forward 2 feet and spit out the cube
+					if (dist >= 2) {
+						motorSet(0, 0);
+						intakeMotorSet(-1, -1);
+						Timer.delay(2);
+						intakeMotorSet(0, 0);
+						intakeVert.set(0);
+						enc1.reset();
+						counter++;
+					} else {
+						motorSet(prop(2, dist), prop(2, dist));
+					}
+				}
+				if (counter == 5) { // stop all motors
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+				}
 
 			} else if (FMS.charAt(0) == 'R') { // Switch on right side
 				// TODO: be careful of turning error accumulation
 				if (counter == 0) { // move 235 in. past the switch
 					if (dist >= 19.58333333333333333) {
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(prop(19.58333333333333333, dist), prop(19.58333333333333333, dist));
@@ -573,7 +599,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 18.1155833333333) {
 						motorSet(0, 0);
 						counter++;
-						//gyro.reset();
+						gyro.reset();
 					} else {
 						motorSet(prop(18.1155833333333, dist), prop(18.1155833333333, dist));
 					}
@@ -591,7 +617,7 @@ public class Robot extends IterativeRobot {
 					if (dist >= 2.6666666666667) {
 						motorSet(0, 0);
 						counter++;
-						//gyro.reset();
+						gyro.reset();
 					} else {
 						motorSet(prop(2.6666666666667, dist), prop(2.6666666666667, dist));
 					}
@@ -605,7 +631,31 @@ public class Robot extends IterativeRobot {
 						motorSet(-propGyro(90, angle), propGyro(90, angle));
 					}
 				}
-				// TODO: Intake code
+
+				if (counter == 6) { // lift the intake
+					intakeVert.set(-.85);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					counter++;
+				}
+				if (counter == 7) { // go forward 2 feet and spit out the cube
+					if (dist >= 2) {
+						motorSet(0, 0);
+						intakeMotorSet(-1, -1);
+						Timer.delay(2);
+						intakeMotorSet(0, 0);
+						intakeVert.set(0);
+						enc1.reset();
+						counter++;
+					} else {
+						motorSet(prop(2, dist), prop(2, dist));
+					}
+				}
+				if (counter == 8) { // stop all motors
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+				}
 			} else { // If there's an error with FMS, only do the baseline
 						// This is identical to baselineEnc
 				if (counter == 0) {
@@ -627,7 +677,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 0) {
 					if (dist >= 14) { // move forward 168 in
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						enc1.reset();
 						counter++;
 					} else {
@@ -657,7 +707,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 0) { // move past switch
 					if (dist >= 19.58333333333333333) {
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(prop(19.58333333333333333, dist), (prop(19.58333333333333333, dist)));
@@ -676,7 +726,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 2) { // move behind switch
 					if (dist >= 18.1155833333333) {
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(prop(18.1155833333333, dist), prop(18.1155833333333, dist));
@@ -694,7 +744,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 4) { // move for the third time
 					if (dist >= 2.6666666666667) {
 						motorSet(0, 0);
-						//gyro.reset();
+						gyro.reset();
 						counter++;
 					} else {
 						motorSet(prop(2.6666666666667, dist), prop(2.6666666666667, dist));
@@ -709,7 +759,30 @@ public class Robot extends IterativeRobot {
 						motorSet(propGyro(-90, angle), -propGyro(-90, angle));
 					}
 				}
-				// TODO: Intake code
+				if (counter == 6) { // lift the intake
+					intakeVert.set(-.85);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					counter++;
+				}
+				if (counter == 7) { // go forward 2 feet and spit out the cube
+					if (dist >= 2) {
+						motorSet(0, 0);
+						intakeMotorSet(-1, -1);
+						Timer.delay(2);
+						intakeMotorSet(0, 0);
+						intakeVert.set(0);
+						enc1.reset();
+						counter++;
+					} else {
+						motorSet(prop(2, dist), prop(2, dist));
+					}
+				}
+				if (counter == 8) { // stop all motors
+					motorSet(0, 0);
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+				}
 			} else { // If there's an error with FMS, only do the baseline
 						// This is identical to baselineEnc
 				if (counter == 0) {
@@ -726,17 +799,18 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case fallbackLeft:
-			if (counter == 0) {
-				if (dist >= 14) {
+			if (counter == 0) { // go forward fourteen feet
+				if (dist >= 12) {
 					motorSet(0, 0);
-					//gyro.reset();
+					gyro.reset();
 					counter++;
 				} else {
-					motorSet(prop(14, dist), prop(14, dist));
+					motorSet(prop(12, dist) * 1.1, prop(12, dist));
 				}
 			}
 			if (FMS.charAt(0) == 'L') {
-				if (counter == 1) {
+				if (counter == 1) { // turn to the right towards the side of the
+									// switch
 					if (angle >= 90) {
 						motorSet(0, 0);
 						counter++;
@@ -744,99 +818,102 @@ public class Robot extends IterativeRobot {
 						motorSet(-propGyro(90, angle), propGyro(90, angle));
 					}
 				}
-				if (counter == 2) {
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0.15);
+				if (counter == 2) { // lift the intake
+					intakeVert.set(-1);
+					intakeMotorSet(-0.5, -0.5);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					intakeMotorSet(0, 0);
+					enc1.reset();
 					counter++;
 				}
-				if (counter == 3) {
-					if (dist >= 2) {
-						motorSet(0, 0);
-						intakeMotorSet(-1, -1);
-						Timer.delay(2);
-						intakeMotorSet(0, 0);
-						intakeVert.set(0);
-						enc1.reset();
-						counter++;
-					} else {
-						motorSet(prop(2, dist), prop(2, dist));
-					}
+				if (counter == 3) { // go forward and spit out cube
+					motorSet(-0.5, -0.5);
+					Timer.delay(2);
+					motorSet(0, 0);
+					counter++;
 				}
 				if (counter == 4) {
+					motorSet(0, 0);
+					intakeMotorSet(1, 1);
+					Timer.delay(4);// change in rest
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+					counter++;
+				}
+				if (counter == 5) { // stop all motors
 					motorSet(0, 0);
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
 				}
-			}
-			else
-			{
-				motorSet(0,0);
-			}
+			} 
 			break;
 		case fallbackRight:
-			if (counter == 0) {
-				if (dist >= 14) {
+			if (counter == 0) { // go forward 14 feet
+				if (dist >= 12) {
 					motorSet(0, 0);
-					//gyro.reset();
+					gyro.reset();
 					counter++;
 				} else {
-					motorSet(prop(14, dist), prop(14, dist));
+					motorSet(prop(12, dist), prop(12, dist));
 				}
 			}
 			if (FMS.charAt(0) == 'R') {
-				if (counter == 1) {
+				if (counter == 1) { // turn to the left towards the side of the
+									// switch
 					if (angle <= -90) {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet(propGyro(-90, angle), -propGyro(-90, angle));
+						motorSet(propGyro(-90, angle), -propGyro(-90, angle)); // TODO: Probable
+																				// problem
+																				// line
 					}
 				}
-				if (counter == 2) {
-					intakeVert.set(.5);
-					Timer.delay(.2);
-					intakeVert.set(0.15);
+				if (counter == 2) { // lift the intake
+					intakeVert.set(-1);
+					intakeMotorSet(-0.5, -0.5);
+					Timer.delay(2);
+					intakeVert.set(-0.15);
+					intakeMotorSet(0, 0);
 					enc1.reset();
 					counter++;
 				}
-				if (counter == 3) {
-					if (dist >= 2) {
-						motorSet(0, 0);
-						intakeMotorSet(-1, -1);
-						Timer.delay(2);
-						intakeMotorSet(0, 0);
-						intakeVert.set(0);
-						counter++;
-					} else {
-						motorSet(prop(2, dist), prop(2, dist));
-					}
+				if (counter == 3) { // go forward and spit out cube
+					motorSet(-0.5, -0.5);
+					Timer.delay(2);
+					motorSet(0, 0);
+					counter++;
 				}
 				if (counter == 4) {
+					motorSet(0, 0);
+					intakeMotorSet(1, 1);
+					Timer.delay(4);// change in rest
+					intakeMotorSet(0, 0);
+					intakeVert.set(0);
+					counter++;
+				}
+				if (counter == 5) { // stop all motors
 					motorSet(0, 0);
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
 				}
 			}
-			else
-			{
-				motorSet(0,0);
-			}
 			break;
 
 		case defaultAuto:
-			if (counter == 0)
-			{
-				//This sequence for spinning intake motors works
-				Timer.delay(1);
-				intakeMotorSet(-1,-1);
-				Timer.delay(1);
+			if (counter == 0) {
+				intakeVert.set(-1);
+				intakeMotorSet(-0.5, -0.5);
+				Timer.delay(2);
+				intakeVert.set(-.15);
+				intakeMotorSet(1, 1);
+				Timer.delay(2);
+				intakeVert.set(0);
+				intakeMotorSet(0, 0);
 				counter++;
 			}
-			if (counter == 1)
-			{
-				intakeMotorSet(0,0);
-			}
+
 			break;
 		}
 	}
@@ -849,6 +926,12 @@ public class Robot extends IterativeRobot {
 		pulse = enc1.get();
 		dist = enc1.getDistance();
 		liftPulse = enc2.get();
+
+		if (irDist > 1) {
+			cube = true;
+		} else {
+			cube = false;
+		}
 
 		double currentZero = pdp.getCurrent(0);
 		double currentOne = pdp.getCurrent(1);
@@ -875,6 +958,7 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
 		SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
+		SmartDashboard.putBoolean("Cube in intake: ", cube);
 
 		/*
 		 * SmartDashboard.putNumber("PDP Channel 0: ", currentZero);
@@ -943,7 +1027,7 @@ public class Robot extends IterativeRobot {
 		if (((target - currentGyro) / target) > 0.8) {
 			return ((target - currentGyro) / target);
 		} else {
-			return 0.2;
+			return 0.23; //WAS 0.2
 		}
 
 	}
