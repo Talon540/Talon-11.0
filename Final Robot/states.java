@@ -423,13 +423,13 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 7) { // was 5 feet before, but that was for right side
+					if (dist >= 5.5) { // was 5 feet before, but that was for right side
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
 						counter++;
 					} else {
-						motorSet(prop(7, dist), prop(7, dist));
+						motorSet(prop(5.5, dist), prop(5.5, dist));
 					}
 				}
 				if (counter == 3) {
@@ -443,7 +443,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if(counter == 4) {
-					motorSet(-0.5, -0.5);
+					motorSet(-0.4, -0.4);
 					Timer.delay(1);
 					motorSet(0, 0);
 					counter++;
@@ -529,7 +529,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if(counter == 4) {
-					motorSet(-0.5, -0.5);
+					motorSet(-0.4, -0.4);
 					Timer.delay(1);
 					motorSet(0, 0);
 					counter++;
@@ -970,6 +970,28 @@ public class Robot extends IterativeRobot {
 
 		case defaultAuto:
 			motorSet(0,0);
+			/*
+			if (counter == 0) { // lift the intake
+				intakeVert.set(-1);
+				Timer.delay(2);
+				intakeVert.set(-0.15);
+				intakeMotorSet(0, 0);
+				enc1.reset();
+				counter++;
+				}
+			if (counter == 1) { // go forward and spit out cube
+				intakeMotorSet(1, 1);
+				Timer.delay(4);// change in rest
+				intakeMotorSet(0, 0);
+				intakeVert.set(0);
+				counter++;
+			}
+			if (counter == 2)
+			{
+				intakeMotorSet(0,0);
+				intakeVert.set(0);
+			}
+			*/
 			break;
 		}
 	}
