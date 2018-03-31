@@ -419,17 +419,17 @@ public class Robot extends IterativeRobot {
 						enc1.reset();
 						counter++;
 					} else {
-						motorSet(propGyro(-45, angle) * 1.2, -propGyro(-45, angle) * 1.2);
+						motorSet(propGyro(-45, angle), -propGyro(-45, angle));
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 5.5) { // was 5 feet before, but that was for right side
+					if (dist >= 5) { // was 5 feet before, but that was for right side
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
 						counter++;
 					} else {
-						motorSet(prop(5.5, dist), prop(5.5, dist));
+						motorSet(prop(5, dist), prop(5, dist));
 					}
 				}
 				if (counter == 3) {
@@ -438,7 +438,7 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else { // TODO: fine-tune the turning function
-						motorSet(-propGyro(42, angle) * 1.2, propGyro(42, angle) * 1.2); // or
+						motorSet(-propGyro(42, angle), propGyro(42, angle)); // or
 						// else keep turning
 					}
 				}
@@ -508,13 +508,13 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 5) { // was 9 feet; now 7 ft
+					if (dist >= 4.5) { // was 9 feet; now 4.5 ft; DOES NOT WORK WITH 4 FOR SOME REASON
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
 						counter++;
 					} else {
-						motorSet(prop(5, dist), prop(5, dist));
+						motorSet(prop(4.5, dist), prop(4.5, dist));
 					}
 				}
 				if (counter == 3) {
