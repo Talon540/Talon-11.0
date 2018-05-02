@@ -1,11 +1,5 @@
 package org.usfirst.frc.team540.robot;
 
-// TODO:
-//Test Turning on a Carpet Surface
-//Test Elevator (Timer and Encoder)
-//Determine measurements for Middle Auto
-// fix Middle Auto
-
 import com.mindsensors.CANSD540;
 
 import edu.wpi.cscore.UsbCamera;
@@ -24,19 +18,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends IterativeRobot {
 	final String defaultAuto = "Default";
-
+	// timer modes
 	final String baselineTime = "Baseline with timer";
 	final String switchTimeLeft = "Left Switch From Side with Timer";
 	final String switchTimeRight = "Right Switch From Side with Timer";
 	final String fallbackTimeLeft = "Fallback Switch with Timer (L)";
 	final String fallbackTimeRight = "Fallback Switch with Timer (R)";
 
-	final String baselineEnc = " -- Baseline with encoder";
+	// encoder modes
+	final String baselineEnc = "Baseline with encoder";
 	final String switchMiddleEnc = "Switch with encoder (M)";
 	final String switchRightEnc = "Switch with encoder(R)";
 	final String switchLeftEnc = "Switch with encoder (L)";
-	final String fallbackLeft = "fallback switch/baseline (L)";
-	final String fallbackRight = "fallback switch/baseline (R)";
+	final String fallbackLeft = "Fallback switch/baseline (L)";
+	final String fallbackRight = "Fallback switch/baseline (R)";
 
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
@@ -45,35 +40,33 @@ public class Robot extends IterativeRobot {
 	CANSD540 frontLeft, frontRight, backLeft, backRight, midLeft, midRight, intake1, intake2, intakeVert, hook, winch;
 	Joystick leftJoy, rightJoy;
 	XboxController xbox;
-	//PowerDistributionPanel pdp;
 
 	// Sensor fields
 	Encoder enc1, enc2;
 	ADXRS450_Gyro gyro;
-	// AnalogGyro gyro;
 	AnalogInput IR;
 
 	// will be used in driveCode() to get current movement
 	double left, right, intakeL, intakeR, hooker, wench;
 
 	// sensor fields
-	double angle, irDist, pulse, dist; 
-	//double liftPulse;
+	double angle, irDist, pulse, dist;
+	// double liftPulse;
 
+	// variable to compensate for inconsistent motor powers
 	double scale;
 
 	boolean height, toggle, cube, still;
-	
-	//int[] prevAngles;
 
+	// Constant multiplied by the
 	final static double TURN_CONSTANT = 0.5;
-
-	final static double DRIVE_CONSTANT = -0.8;
 
 	// FMS
 	String FMS, enemyFMS;
 
-	// Counter and side for Auto and reverse for tele-op
+	final static double DRIVE_CONSTANT = -0.8;
+
+	// Counter and side for Auto and reverse for teleop
 	int counter, reverse, side;
 
 	@Override
@@ -99,8 +92,6 @@ public class Robot extends IterativeRobot {
 		// wheel motors
 		frontLeft = new CANSD540(6);
 		backLeft = new CANSD540(7);
-		//backLeft = new CANSD540(8);
-		//frontRight = new CANSD540(3);
 		frontRight = new CANSD540(4);
 		backRight = new CANSD540(5);
 
@@ -119,28 +110,19 @@ public class Robot extends IterativeRobot {
 		xbox = new XboxController(2);
 
 		// drivetrain encoder
-		enc1 = new Encoder(0, 1, false);
+		enc1 = new Encoder(2, 3, false);
 		enc1.setMaxPeriod(0.1);
 		enc1.setMinRate(5);
 		// 0.00078487 ft per pulse -> 10 ft per 12741 pulses
 		enc1.setDistancePerPulse(0.00078487);
 		enc1.setSamplesToAverage(10);
 
-		// intake lift encoder NOT BEING USED
-		/*
-		enc2 = new Encoder(2, 3);
-		enc2.setMaxPeriod(0.1);
-		enc2.setMinRate(5);
-		enc2.setSamplesToAverage(10);
-		*/
 		// sensors
 		gyro = new ADXRS450_Gyro();
-		// gyro = new AnalogGyro(1);
 		IR = new AnalogInput(0);
 
-		// calibrates sensors
-		// gyro.calibrate();
-		// gyro.reset();
+		// Note: Never use gyro.calibrate() and gyro.reset() together
+		// calibrates encoders
 		enc1.reset();
 
 		// initializes counter
@@ -155,23 +137,10 @@ public class Robot extends IterativeRobot {
 		// initializes scale
 		scale = 0.75;
 
-		// initializes previous angles
-		/*
-		prevAngles = new int[5];
-		prevAngles[0] = 0;
-		prevAngles[1] = 0;
-		prevAngles[2] = 0;
-		prevAngles[3] = 0;
-		prevAngles[4] = 0;
-		*/
-		
 		// initialize voltage ramps
-
 		frontLeft.setVoltageRamp(100);
-		//midLeft.setVoltageRamp(100);
 		backLeft.setVoltageRamp(100);
 		frontRight.setVoltageRamp(100);
-		//midRight.setVoltageRamp(100);
 		backRight.setVoltageRamp(100);
 
 		intake1.setVoltageRamp(100);
@@ -183,10 +152,6 @@ public class Robot extends IterativeRobot {
 		UsbCamera cam = server.startAutomaticCapture();
 		cam.setResolution(320, 240);
 		cam.setFPS(15);
-		// CameraServer.getInstance().startAutomaticCapture()
-
-		// pdp for debugging purposes
-		//pdp = new PowerDistributionPanel();
 
 		// FMS Initialization
 		FMS = "";
@@ -203,12 +168,6 @@ public class Robot extends IterativeRobot {
 		}
 		SmartDashboard.putString("Our Switch Side: ", FMS);
 
-		/*
-		 * ENEMY FMS DETECTION enemyFMS = FMS.replace('L', 'E'); enemyFMS =
-		 * enemyFMS.replace('R', 'L'); enemyFMS = enemyFMS.replace('E', 'R');
-		 * SmartDashboard.putString("Enemy Switch Side: ", enemyFMS);
-		 */
-
 		counter = 0;
 		gyro.reset();
 		enc1.reset();
@@ -217,22 +176,11 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		// Gets sensor values and displays them in SmartDashboard
-		/*prevAngles[4] = prevAngles[3];
-		prevAngles[3] = prevAngles[2];
-		prevAngles[2] = prevAngles[1];
-		prevAngles[1] = prevAngles[0];
-		prevAngles[0] = (int) angle;*/
+
 		angle = gyro.getAngle();
-		
-		/*if (prevAngles[4] == prevAngles[3] && prevAngles[3] == prevAngles[2] && prevAngles[2] == prevAngles[1] && prevAngles[1] == prevAngles[0] && prevAngles[0] == (int) angle) {
-			still = true;
-		} else {
-			still = false;
-		}*/
-		
 		irDist = IR.getVoltage();
 		pulse = enc1.get();
-		dist = Math.abs(enc1.getDistance());
+		dist = enc1.getDistance();
 
 		SmartDashboard.putNumber("Angle: ", angle);
 		SmartDashboard.putNumber("IR Distance: ", irDist);
@@ -243,10 +191,11 @@ public class Robot extends IterativeRobot {
 		switch (autoSelected) {
 
 		// MOTORS ARE BOTH INVERTED IN AUTO (no reason found, but it works)
-		case baselineTime: // used in case encoders do not work; not accurate at
-							// the moment
+		
+		//Timer Modes
+		case baselineTime: 
 			if (counter == 0) {
-				motorSet(-.5, -.5); // go forward to 2 secs
+				motorSet(-.5, -.5); // go forward for 3 seconds and cross the baseline
 				Timer.delay(3);
 				motorSet(0, 0);
 				counter++;
@@ -258,16 +207,16 @@ public class Robot extends IterativeRobot {
 
 		case switchTimeLeft:
 			if (counter == 0) {
-				motorSet(-.5, -.5); // go forward to 2 secs
-				Timer.delay(2.8); // TODO: fine tune the time
+				motorSet(-.5, -.5); // go forward for 2.8 seconds
+				Timer.delay(2.8); 
 				motorSet(0, 0);
-				Timer.delay(1);
+				Timer.delay(1); //stops for 1 second
 				gyro.reset();
 				counter++;
 			}
 			if (FMS.charAt(0) == 'L') {
 
-				if (counter == 1) {
+				if (counter == 1) { // turns 90 degrees to the left
 					if (angle >= 90) {
 						motorSet(0, 0);
 						counter++;
@@ -275,15 +224,15 @@ public class Robot extends IterativeRobot {
 						motorSet(-propGyro(90, angle), propGyro(90, angle));
 					}
 				}
-				if (counter == 2) {
-					motorSet(-.5, -.5);
+				if (counter == 2) { 
+					motorSet(-.5, -.5); //goes forward for 1 second
 					Timer.delay(1);
 					motorSet(0, 0);
-					intakeVert.set(-0.8);
+					intakeVert.set(-0.8); //raises the intake elevator for 2 seconds
 					Timer.delay(2);
-					intakeVert.set(-0.15);
-					intakeMotorSet(-1, -1);
-					Timer.delay(2);
+					intakeVert.set(-0.15); //keeps the elevator from drooping due to gravity
+					intakeMotorSet(1, 1); //spits out the cube the cube
+					Timer.delay(2); 
 					intakeMotorSet(0, 0);
 					counter++;
 				}
@@ -298,17 +247,17 @@ public class Robot extends IterativeRobot {
 
 		case switchTimeRight:
 			if (counter == 0) {
-				motorSet(-.5, -.5); // go forward to 2 secs
-				Timer.delay(2.8); // TODO: fine tune the time
+				motorSet(-.5, -.5); // go forward to 2.8 seconds
+				Timer.delay(2.8); 
 				motorSet(0, 0);
-				Timer.delay(1);
+				Timer.delay(1); 
 				gyro.reset();
 				counter++;
 			}
 			if (FMS.charAt(0) == 'R') {
 
-				if (counter == 1) {
-					if (angle <= -90) {
+				if (counter == 1) { 
+					if (angle <= -90) { //turns 90 degrees to the right
 						motorSet(0, 0);
 						counter++;
 					} else {
@@ -316,13 +265,13 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					motorSet(-.5, -.5);
+					motorSet(-.5, -.5); //goes forward for 1 second
 					Timer.delay(1);
 					motorSet(0, 0);
-					intakeVert.set(-0.85);
+					intakeVert.set(-0.85); //raises the intake elevator for 2 seconds
 					Timer.delay(2);
-					intakeVert.set(-0.15);
-					intakeMotorSet(-1, -1);
+					intakeVert.set(-0.15); //keeps the elevator from drooping due to gravity
+					intakeMotorSet(1, 1); //keeps the cube in the intake
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
 					counter++;
@@ -338,19 +287,19 @@ public class Robot extends IterativeRobot {
 
 		case fallbackTimeLeft: // used in case no sensors work
 			if (counter == 0) {
-				motorSet(-.5, -.5); // go forward to 3 secs
+				motorSet(-.5, -.5); // go forward to 3 seconds
 				Timer.delay(3);
 				motorSet(0, 0);
 				counter++;
 			}
 			if (counter == 1) {
 				if (FMS.charAt(0) == 'L') {
-					intakeVert.set(-1);
-					intakeMotorSet(-.5, -.5);
+					intakeVert.set(-1); //raises the intake elevator
+					intakeMotorSet(-.5, -.5); //spits out the cube
 					Timer.delay(2);
-					intakeVert.set(-0.15);
+					intakeVert.set(-0.15); //keeps the elevator from drooping
 					Timer.delay(0.2);
-					intakeMotorSet(1, 1);
+					intakeMotorSet(1, 1); //intakes the cube
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
 				} else {
@@ -362,19 +311,19 @@ public class Robot extends IterativeRobot {
 
 		case fallbackTimeRight: // used in case sensors do not work
 			if (counter == 0) {
-				motorSet(-.5, -.5); // go forward to 3 secs
+				motorSet(-.5, -.5); // go forward to 3 seconds
 				Timer.delay(3);
 				motorSet(0, 0);
 				counter++;
 			}
 			if (counter == 1) {
 				if (FMS.charAt(0) == 'R') {
-					intakeVert.set(-0.85);
+					intakeVert.set(-0.85); //raises the intake elevator
 					Timer.delay(2);
-					intakeVert.set(-0.15);
+					intakeVert.set(-0.15); //keeps the elevator from drooping
 					Timer.delay(2);
 					intakeMotorSet(0, 0);
-					motorSet(-.6, -.6);
+					motorSet(-.6, -.6); //spits out the cube
 					Timer.delay(0.5);
 					motorSet(0, 0);
 				} else {
@@ -384,9 +333,11 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 
+			
+		//Encoder modes
 		case baselineEnc:
 			if (counter == 0) {
-				if (dist >= 9.5) { // 9.5 feet
+				if (dist >= 9.5) { // goes forward 9.5 feet
 					motorSet(0, 0);
 					counter++;
 				} else {
@@ -399,11 +350,10 @@ public class Robot extends IterativeRobot {
 			break;
 
 		case switchMiddleEnc:
-			System.out.println(FMS.charAt(0));
+			
 			if (FMS.charAt(0) == 'L') { // if the switch is left
 				if (counter == 0) {
-					if (dist >= 2) { // move away from the wall so it can turn
-										// by two feet
+					if (dist >= 2) { // move away from the wall so it can turn by two feet
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
@@ -412,9 +362,9 @@ public class Robot extends IterativeRobot {
 						motorSet(-.5, -.5);
 					}
 				}
-				if (counter == 1) {
-					//if (angle <= -45 || still == true) { // turns 20 degrees to the left
-					if (angle <= -45) {
+				if (counter == 1) { // turns to the left 45 degrees
+
+					if (angle <= -45) { 
 						motorSet(0, 0);
 						enc1.reset();
 						counter++;
@@ -422,8 +372,8 @@ public class Robot extends IterativeRobot {
 						motorSet(propGyro(-45, angle), -propGyro(-45, angle));
 					}
 				}
-				if (counter == 2) {
-					if (dist >= 5) { // was 5 feet before, but that was for right side
+				if (counter == 2) { // Goes forward 5 feet 
+					if (dist >= 5) { 
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
@@ -432,53 +382,33 @@ public class Robot extends IterativeRobot {
 						motorSet(prop(5, dist), prop(5, dist));
 					}
 				}
-				if (counter == 3) {
-					//if (angle >= 42 || still == true) { // turn to face the switch
-					if (angle >= 42) {
+				if (counter == 3) { // turns to the right 45 degrees to face the front of the switch
+	
+					if (angle >= 42) { // 42 degrees instead of 45 to compensate for error
 						motorSet(0, 0);
 						counter++;
-					} else { // TODO: fine-tune the turning function
-						motorSet(-propGyro(42, angle), propGyro(42, angle)); // or
-						// else keep turning
+					} else { 
+						motorSet(-propGyro(42, angle), propGyro(42, angle)); //or else keep turning
 					}
 				}
-				if(counter == 4) {
-					motorSet(-0.4, -0.4);
+				if (counter == 4) {
+					motorSet(-0.4, -0.4); //goes forward for 1 second
 					Timer.delay(1);
 					motorSet(0, 0);
 					counter++;
 				}
 				if (counter == 5) {
-					motorSet(0, 0);
-					intakeVert.set(-1);
+					motorSet(0, 0); 
+					intakeVert.set(-1); //raises the intake elevator 
 					Timer.delay(2);
-					intakeVert.set(-0.15);
-					intakeMotorSet(1, 1);
+					intakeVert.set(-0.15); //keeps the elevator from drooping due to gravity
+					intakeMotorSet(1, 1); // keeps the cube in the intake
 					Timer.delay(4);
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
 					counter++;
 				}
-				/* OLD CODE
-				if (counter == 4) {
-					intakeVert.set(-1);
-					Timer.delay(2);
-					intakeVert.set(-0.15);
-					enc1.reset();
-					counter++;
-				}
-				if (counter == 5) {
-					if (dist >= 3.5) { // 3.5 feet
-						motorSet(0, 0);
-						intakeMotorSet(1, 1);
-						Timer.delay(2);
-						intakeMotorSet(0, 0);
-						intakeVert.set(0);
-						counter++;
-					} else {
-						motorSet(prop(3.5, dist), prop(3.5, dist));
-					}
-				}*/
+
 				if (counter == 6) {
 					motorSet(0, 0);
 					intakeMotorSet(0, 0);
@@ -498,7 +428,8 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 1) {
-					//if (angle >= 45 || still == true) { // turns 45 degrees to the right
+					// turns 45 degrees
+					// to the right
 					if (angle >= 45) {
 						motorSet(0, 0);
 						enc1.reset();
@@ -508,7 +439,8 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 4.5) { // was 9 feet; now 4.5 ft; DOES NOT WORK WITH 4 FOR SOME REASON
+					if (dist >= 4.5) { // was 9 feet; now 4.5 ft; DOES NOT WORK
+										// WITH 4 FOR SOME REASON
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
@@ -518,7 +450,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 3) {
-					//if (angle <= -42 || still == true) { // turn to face the switch
+					// turn to face the switch
 					if (angle <= -42) {
 						motorSet(0, 0);
 						enc1.reset();
@@ -528,7 +460,7 @@ public class Robot extends IterativeRobot {
 						// else keep turning
 					}
 				}
-				if(counter == 4) {
+				if (counter == 4) {
 					motorSet(-0.4, -0.4);
 					Timer.delay(1);
 					motorSet(0, 0);
@@ -545,26 +477,7 @@ public class Robot extends IterativeRobot {
 					intakeVert.set(0);
 					counter++;
 				}
-				/* OLD CODE
-				if (counter == 5) {
-					intakeVert.set(-1);
-					Timer.delay(2);
-					intakeVert.set(-0.15);
-					enc1.reset();
-					counter++;
-				}
-				if (counter == 5) {
-					if (dist >= 3.5) { // 3.5 feet
-						motorSet(0, 0);
-						intakeMotorSet(1, 1);
-						Timer.delay(2);
-						intakeMotorSet(0, 0);
-						intakeVert.set(0);
-						counter++;
-					} else {
-						motorSet(prop(3.5, dist), prop(3.5, dist));
-					}
-				}*/
+
 				if (counter == 6) {
 					motorSet(0, 0);
 					intakeMotorSet(0, 0);
@@ -770,7 +683,7 @@ public class Robot extends IterativeRobot {
 				}
 
 			} else if (FMS.charAt(0) == 'L') { // Switch on left side
-				// TODO: review for turning error accumulation
+
 				if (counter == 0) { // move past switch
 					if (dist >= 19.58333333333333333) {
 						motorSet(0, 0);
@@ -913,7 +826,7 @@ public class Robot extends IterativeRobot {
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
 				}
-			} 
+			}
 			break;
 		case fallbackRight:
 			if (counter == 0) { // go forward 14 feet
@@ -932,9 +845,7 @@ public class Robot extends IterativeRobot {
 						motorSet(0, 0);
 						counter++;
 					} else {
-						motorSet(propGyro(-90, angle), -propGyro(-90, angle)); // TODO: Probable
-																				// problem
-																				// line
+						motorSet(propGyro(-90, angle), -propGyro(-90, angle));
 					}
 				}
 				if (counter == 2) { // lift the intake
@@ -969,29 +880,7 @@ public class Robot extends IterativeRobot {
 			break;
 
 		case defaultAuto:
-			motorSet(0,0);
-			/*
-			if (counter == 0) { // lift the intake
-				intakeVert.set(-1);
-				Timer.delay(2);
-				intakeVert.set(-0.15);
-				intakeMotorSet(0, 0);
-				enc1.reset();
-				counter++;
-				}
-			if (counter == 1) { // go forward and spit out cube
-				intakeMotorSet(1, 1);
-				Timer.delay(4);// change in rest
-				intakeMotorSet(0, 0);
-				intakeVert.set(0);
-				counter++;
-			}
-			if (counter == 2)
-			{
-				intakeMotorSet(0,0);
-				intakeVert.set(0);
-			}
-			*/
+			motorSet(0, 0);
 			break;
 		}
 	}
@@ -1003,60 +892,20 @@ public class Robot extends IterativeRobot {
 		irDist = IR.getVoltage();
 		pulse = enc1.get();
 		dist = enc1.getDistance();
-		//liftPulse = enc2.get();
+		// liftPulse = enc2.get();
 
 		if (irDist > 1) {
 			cube = true;
 		} else {
 			cube = false;
 		}
-		/*
-		double currentZero = pdp.getCurrent(0);
-		double currentOne = pdp.getCurrent(1);
-		double currentTwo = pdp.getCurrent(2);
-		double currentThree = pdp.getCurrent(3);
-		double currentFour = pdp.getCurrent(4);
-		double currentFive = pdp.getCurrent(5);
-		double currentSix = pdp.getCurrent(6);
-		double currentSeven = pdp.getCurrent(7);
-		double currentEight = pdp.getCurrent(8);
-		double currentNine = pdp.getCurrent(9);
-		double currentTen = pdp.getCurrent(10);
-		double currentEleven = pdp.getCurrent(11);
-		double currentTwelve = pdp.getCurrent(12);
-		double currentThirteen = pdp.getCurrent(13);
-		double currentFourteen = pdp.getCurrent(14);
-		double currentFifteen = pdp.getCurrent(15);
-		double currentSum = currentZero + currentOne + currentTwo + currentThree + currentFour + currentFive
-				+ currentSix + currentSeven + currentEight + currentNine + currentTen + currentEleven + currentTwelve
-				+ currentThirteen + currentFourteen + currentFifteen;
-		*/
+
 		SmartDashboard.putNumber("Angle: ", angle);
 		SmartDashboard.putNumber("IR Distance: ", irDist);
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
-		//SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
+		// SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
 		SmartDashboard.putBoolean("Cube in intake: ", cube);
-
-		/*
-		 * SmartDashboard.putNumber("PDP Channel 0: ", currentZero);
-		 * SmartDashboard.putNumber("PDP Channel 1: ", currentOne);
-		 * SmartDashboard.putNumber("PDP Channel 2: ", currentTwo);
-		 * SmartDashboard.putNumber("PDP Channel 3: ", currentThree);
-		 * SmartDashboard.putNumber("PDP Channel 4: ", currentFour);
-		 * SmartDashboard.putNumber("PDP Channel 5: ", currentFive);
-		 * SmartDashboard.putNumber("PDP Channel 6: ", currentSix);
-		 * SmartDashboard.putNumber("PDP Channel 7: ", currentSeven);
-		 * SmartDashboard.putNumber("PDP Channel 8: ", currentEight);
-		 * SmartDashboard.putNumber("PDP Channel 9: ", currentNine);
-		 * SmartDashboard.putNumber("PDP Channel 10: ", currentTen);
-		 * SmartDashboard.putNumber("PDP Channel 11: ", currentEleven);
-		 * SmartDashboard.putNumber("PDP Channel 12: ", currentTwelve);
-		 * SmartDashboard.putNumber("PDP Channel 13: ", currentThirteen);
-		 * SmartDashboard.putNumber("PDP Channel 14: ", currentFourteen);
-		 * SmartDashboard.putNumber("PDP Channel 15: ", currentFifteen);
-		 * SmartDashboard.putNumber("Total PDP Current: ", currentSum);
-		 */
 
 		// calls drive() to drive
 		drive();
@@ -1105,7 +954,7 @@ public class Robot extends IterativeRobot {
 		if (((target - currentGyro) / target) > 0.8) {
 			return Math.abs(((target - currentGyro) / target));
 		} else {
-			return 0.23; //WAS 0.2
+			return 0.23; // WAS 0.2
 		}
 
 	}
@@ -1170,11 +1019,11 @@ public class Robot extends IterativeRobot {
 	 */
 	private void motorSet(double left, double right) {
 		frontLeft.set(left);
-		//midLeft.set(left);
+		// midLeft.set(left);
 		backLeft.set(left);
 
 		frontRight.set(-right);
-		//midRight.set(-right);
+		// midRight.set(-right);
 		backRight.set(-right);
 	}
 
