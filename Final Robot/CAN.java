@@ -1,12 +1,4 @@
 package org.usfirst.frc.team540.robot;
-
-// TODO:
-// Test new Distance and Turning
-// Replace Distance and Turning Function in Auto
-//Test Middle Auto
-// Test Hook
-// Test Winch
-
 import com.mindsensors.CANSD540;
 
 import edu.wpi.cscore.UsbCamera;
