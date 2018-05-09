@@ -66,7 +66,7 @@ public class Robot extends IterativeRobot {
 
 	final static double DRIVE_CONSTANT = -0.8;
 
-	// Counter and side for Auto and reverse for teleop
+	// Counter and side for Auto and reverse for tele-op
 	int counter, reverse, side;
 
 	@Override
@@ -372,7 +372,7 @@ public class Robot extends IterativeRobot {
 						motorSet(propGyro(-45, angle), -propGyro(-45, angle));
 					}
 				}
-				if (counter == 2) { // Goes forward 5 feet 
+				if (counter == 2) { // Goes forward 5 feet  
 					if (dist >= 5) { 
 						motorSet(0, 0);
 						Timer.delay(0.5);
@@ -417,8 +417,7 @@ public class Robot extends IterativeRobot {
 
 			} else if (FMS.charAt(0) == 'R') { // right hand switch
 				if (counter == 0) {
-					if (dist >= 2) { // move away from the wall so it can turn
-										// by two feet
+					if (dist >= 2) { // move away from the wall so it can turn by two feet
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
@@ -428,8 +427,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 1) {
-					// turns 45 degrees
-					// to the right
+					// turns 45 degrees to the right
 					if (angle >= 45) {
 						motorSet(0, 0);
 						enc1.reset();
@@ -439,8 +437,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				if (counter == 2) {
-					if (dist >= 4.5) { // was 9 feet; now 4.5 ft; DOES NOT WORK
-										// WITH 4 FOR SOME REASON
+					if (dist >= 4.5) { // was 9 feet, now 4.5 feet; DOES NOT WORK WITH 4 FOR SOME REASON
 						motorSet(0, 0);
 						Timer.delay(0.5);
 						gyro.reset();
@@ -449,29 +446,27 @@ public class Robot extends IterativeRobot {
 						motorSet(prop(4.5, dist), prop(4.5, dist));
 					}
 				}
-				if (counter == 3) {
-					// turn to face the switch
-					if (angle <= -42) {
+				if (counter == 3) { // turn to face the switch
+					if (angle <= -42) { //turns 45 degrees but changed to 42 to compensate for error
 						motorSet(0, 0);
 						enc1.reset();
 						counter++;
-					} else { // TODO: fine-tune the turning function
-						motorSet(propGyro(-42, angle), -propGyro(-42, angle)); // or
-						// else keep turning
+					} else { 
+						motorSet(propGyro(-42, angle), -propGyro(-42, angle)); // or else keep turning
 					}
 				}
 				if (counter == 4) {
-					motorSet(-0.4, -0.4);
+					motorSet(-0.4, -0.4); //goes forward for 1 second
 					Timer.delay(1);
 					motorSet(0, 0);
 					counter++;
 				}
 				if (counter == 5) {
 					motorSet(0, 0);
-					intakeVert.set(-1);
+					intakeVert.set(-1); //raises the intake elevator
 					Timer.delay(2);
-					intakeVert.set(-0.15);
-					intakeMotorSet(1, 1);
+					intakeVert.set(-0.15); //keeps the elevator from drooping
+					intakeMotorSet(1, 1); //keeps the cube from falling out
 					Timer.delay(4);
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
@@ -484,9 +479,9 @@ public class Robot extends IterativeRobot {
 					intakeVert.set(0);
 				}
 			} else { // If there's an error with FMS, only do the baseline
-						// This is identical to baselineEnc
+					 // This is identical to baselineEnc
 				if (counter == 0) {
-					if (dist >= 9.5) { // 9.5 feet
+					if (dist >= 9.5) { // goes forward 9.5 feet
 						motorSet(0, 0);
 						counter++;
 					} else {
@@ -499,19 +494,19 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 
-		case switchLeftEnc: // TODO: fine-tune the turning function
+		case switchLeftEnc: 
 			if (FMS.charAt(0) == 'L') {
 				if (counter == 0) {
-					if (dist >= 14) { // move forward 168 in
+					if (dist >= 14) { // move forward 14 feet
 						motorSet(0, 0);
-						enc1.reset();
+						enc1.reset(); //reset the gyro and encoder
 						gyro.reset();
 						counter++;
 					} else {
 						motorSet(prop(14, dist), prop(14, dist));
 					}
 				}
-				if (counter == 1) { // turn right towards the switch
+				if (counter == 1) { // turn left towards the switch
 					if (angle >= 90) {
 						motorSet(0, 0);
 						counter++;
@@ -532,7 +527,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 3) { // lift the intake
 					intakeVert.set(-.85);
 					Timer.delay(2);
-					intakeVert.set(-0.15);
+					intakeVert.set(-0.15); //keep the intake from drooping
 					counter++;
 				}
 				if (counter == 4) { // go forward 2 feet and spit out the cube
@@ -555,8 +550,8 @@ public class Robot extends IterativeRobot {
 				}
 
 			} else if (FMS.charAt(0) == 'R') { // Switch on right side
-				// TODO: be careful of turning error accumulation
-				if (counter == 0) { // move 235 in. past the switch
+				//						         _
+				if (counter == 0) { // move 19.583 in. past the switch
 					if (dist >= 19.58333333333333333) {
 						motorSet(0, 0);
 						gyro.reset();
@@ -766,7 +761,7 @@ public class Robot extends IterativeRobot {
 			} else { // If there's an error with FMS, only do the baseline
 						// This is identical to baselineEnc
 				if (counter == 0) {
-					if (dist >= 9.5) { // 9.5 feet
+					if (dist >= 9.5) { // go forward 9.5 feet
 						motorSet(0, 0);
 						counter++;
 					} else {
@@ -789,8 +784,7 @@ public class Robot extends IterativeRobot {
 				}
 			}
 			if (FMS.charAt(0) == 'L') {
-				if (counter == 1) { // turn to the right towards the side of the
-									// switch
+				if (counter == 1) { // turn to the right towards the side of the switch
 					if (angle >= 90) {
 						motorSet(0, 0);
 						counter++;
@@ -802,7 +796,7 @@ public class Robot extends IterativeRobot {
 					intakeVert.set(-1);
 					intakeMotorSet(-0.5, -0.5);
 					Timer.delay(2);
-					intakeVert.set(-0.15);
+					intakeVert.set(-0.15); //keeps the intake from drooping
 					intakeMotorSet(0, 0);
 					enc1.reset();
 					counter++;
@@ -816,7 +810,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 4) {
 					motorSet(0, 0);
 					intakeMotorSet(1, 1);
-					Timer.delay(4);// change in rest
+					Timer.delay(4);
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
 					counter++;
@@ -829,7 +823,7 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case fallbackRight:
-			if (counter == 0) { // go forward 14 feet
+			if (counter == 0) { // go forward 12 feet
 				if (dist >= 12) {
 					motorSet(0, 0);
 					gyro.reset();
@@ -839,8 +833,7 @@ public class Robot extends IterativeRobot {
 				}
 			}
 			if (FMS.charAt(0) == 'R') {
-				if (counter == 1) { // turn to the left towards the side of the
-									// switch
+				if (counter == 1) { // turn to the right towards the side of the switch
 					if (angle <= -90) {
 						motorSet(0, 0);
 						counter++;
@@ -866,7 +859,7 @@ public class Robot extends IterativeRobot {
 				if (counter == 4) {
 					motorSet(0, 0);
 					intakeMotorSet(1, 1);
-					Timer.delay(4);// change in rest
+					Timer.delay(4);
 					intakeMotorSet(0, 0);
 					intakeVert.set(0);
 					counter++;
@@ -892,8 +885,7 @@ public class Robot extends IterativeRobot {
 		irDist = IR.getVoltage();
 		pulse = enc1.get();
 		dist = enc1.getDistance();
-		// liftPulse = enc2.get();
-
+		
 		if (irDist > 1) {
 			cube = true;
 		} else {
@@ -904,7 +896,6 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("IR Distance: ", irDist);
 		SmartDashboard.putNumber("Pulse Count: ", pulse);
 		SmartDashboard.putNumber("Distance Traveled: ", dist);
-		// SmartDashboard.putNumber("Lift Pulse Count", liftPulse);
 		SmartDashboard.putBoolean("Cube in intake: ", cube);
 
 		// calls drive() to drive
@@ -965,12 +956,8 @@ public class Robot extends IterativeRobot {
 	 * Sets current positions of joysticks as values to left and right
 	 */
 	private void drive() {
-		// if (leftJoy.getRawButton(1) == true) {
+		
 		if (leftJoy.getRawButton(1) == true && leftJoy.getRawButton(3) == true) {
-			/*
-			 * if (leftJoy.getRawButton(3)) reverse *= -1; else if
-			 * (leftJoy.getRawButton(2)) toggle = !toggle;
-			 */
 			scale = 1;
 		} else {
 			scale = 0.75;
@@ -1019,11 +1006,9 @@ public class Robot extends IterativeRobot {
 	 */
 	private void motorSet(double left, double right) {
 		frontLeft.set(left);
-		// midLeft.set(left);
 		backLeft.set(left);
 
 		frontRight.set(-right);
-		// midRight.set(-right);
 		backRight.set(-right);
 	}
 
@@ -1033,10 +1018,9 @@ public class Robot extends IterativeRobot {
 	private void intake() {
 		if (Math.abs(xbox.getRawAxis(1)) > 0.2) {
 			intakeL = xbox.getRawAxis(1);
-			// intakeR = xbox.getRawAxis(1);
+		
 		} else {
 			intakeL = 0;
-			// intakeR = 0;
 		}
 
 		if (Math.abs(xbox.getRawAxis(5)) > 0.2) {
@@ -1056,13 +1040,11 @@ public class Robot extends IterativeRobot {
 	private void moveIntake_Teleop() {
 		// Goes up
 		if (xbox.getRawAxis(2) > 0.7) {
-			// xbox.getXButton() == true
 			height = true;
 			intakeVert.set(xbox.getRawAxis(2));
 		}
 		// Goes down
 		else if (xbox.getRawButton(5) == true) {
-			// xbox.getAButton() == true
 			height = false;
 			intakeVert.set(-.25);
 		}
@@ -1094,10 +1076,8 @@ public class Robot extends IterativeRobot {
 	 */
 	private void climb() {
 		if (xbox.getXButton() == true) {
-			// hooker = xbox.getRawAxis(2);
 			hooker = 0.5;
 		} else if (xbox.getAButton() == true) {
-			// xbox.getRawButton(5) == true
 			hooker = -.75;
 		} else {
 			hooker = 0;
@@ -1106,7 +1086,7 @@ public class Robot extends IterativeRobot {
 		if (xbox.getRawAxis(3) > 0.7) {
 			wench = xbox.getRawAxis(3);
 		} else if (xbox.getRawButton(6) == true) {
-			// wench = -.5;
+			
 		} else {
 			wench = 0;
 		}
